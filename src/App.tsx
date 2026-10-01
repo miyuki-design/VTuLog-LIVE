@@ -635,9 +635,15 @@ const createSenderOffer = useCallback(async () => {
   }
 
   try {
-    rtcSenderRef.current?.close()
+  rtcSenderRef.current?.close()
 
-    const sender = new RTCPeerConnection({
+  // 新しいOfferを作るので、前回のAnswerを破棄する
+  setRemoteAnswerText('')
+  setOfferText('')
+  setRtcStatus('idle')
+
+  const sender = new RTCPeerConnection({
+    
       iceServers: [
         {
           urls: 'stun:stun.cloudflare.com:3478',
