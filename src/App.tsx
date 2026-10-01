@@ -1584,7 +1584,10 @@ await sender.setRemoteDescription(receiver.localDescription)
 
   <div className="flex gap-2">
   <button
-    onClick={() => setRtcRole('sender')}
+    onClick={() => {
+  setRtcRole('sender')
+  localStorage.setItem('vtulog-rtc-role', 'sender')
+}}
     className="glass rounded-xl px-3 py-2"
     style={{
       fontSize: '11px',
@@ -1598,7 +1601,10 @@ await sender.setRemoteDescription(receiver.localDescription)
   </button>
 
   <button
-    onClick={() => setRtcRole('receiver')}
+    onClick={() => {
+  setRtcRole('receiver')
+  localStorage.setItem('vtulog-rtc-role', 'receiver')
+}}
     className="glass rounded-xl px-3 py-2"
     style={{
       fontSize: '11px',
