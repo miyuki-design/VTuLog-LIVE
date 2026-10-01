@@ -647,7 +647,7 @@ const createSenderOffer = useCallback(async () => {
 
     rtcSenderRef.current = sender
 
-    stream.getTracks().forEach(track => {
+    stream.getVideoTracks().forEach(track => {
   sender.addTransceiver(track, {
     direction: 'sendonly',
     streams: [stream],
