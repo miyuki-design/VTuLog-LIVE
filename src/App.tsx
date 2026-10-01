@@ -640,9 +640,11 @@ export default function App() {
 
   // ── Cleanup ──
   useEffect(() => () => {
-    if (timerRef.current) clearInterval(timerRef.current)
-    if (playbackTimerRef.current) clearInterval(playbackTimerRef.current)
-  }, [])
+  if (timerRef.current) clearInterval(timerRef.current)
+
+  audioStreamRef.current?.getTracks().forEach(track => track.stop())
+  liveStreamRef.current?.getTracks().forEach(track => track.stop())
+}, [])
 
   return (
     <div className="h-full flex items-center justify-center" style={{ background: 'var(--color-bg)', fontFamily: 'var(--font-body)' }}>
@@ -760,18 +762,12 @@ export default function App() {
             </div>
           )}
 
-
-          {/* ── Preview / playback video ── */}
-          <video
-            ref={previewVideoRef}
-            playsInline
-            className="absolute inset-0 w-full h-full"
-            style={{ objectFit: 'cover', display: isPreviewMode ? 'block' : 'none' }}
-          />
-
           {/* Recording border */}
-          {appState === 'recording' && (
-            <div className="absolute inset-0 rounded-2xl pointer-events-none" style={{ border: '2px solid rgba(255,59,59,0.7)', zIndex: 15 }} />
+         {isLive && (
+          <div
+          className="absolute inset-0 rounded-2xl pointer-events-none"
+          style={{ border: '2px solid rgba(255,59,59,0.7)', zIndex: 15 }}
+            />
           )}
 
           {/* Viewfinder corners */}
