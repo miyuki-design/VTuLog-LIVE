@@ -675,6 +675,24 @@ const createSenderOffer = useCallback(async () => {
     setOfferText(
       JSON.stringify(sender.localDescription)
     )
+
+    const response = await fetch(
+  `${SIGNALING_BASE_URL}/rooms/${encodeURIComponent(SIGNALING_ROOM_ID)}/offer`,
+  {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(sender.localDescription),
+  }
+)
+
+if (!response.ok) {
+  throw new Error(`Offer の自動送信に失敗しました: ${response.status}`)
+}
+
+console.log('Offerをシグナリングサーバーへ送信しました')
+    
   } catch (error) {
     console.error('Offer creation failed:', error)
     alert('Offer の生成に失敗しました')
