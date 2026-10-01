@@ -883,7 +883,7 @@ console.log('Answerをシグナリングサーバーへ送信しました')
     console.error('Answer creation failed:', error)
     alert('Offerの読み込み、またはAnswerの生成に失敗しました')
   }
-}, [remoteOfferText])
+}, [])
 
 useEffect(() => {
   if (rtcRole !== 'receiver') return
