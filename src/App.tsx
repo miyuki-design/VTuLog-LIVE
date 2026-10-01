@@ -820,6 +820,24 @@ if (!offerTextToUse) {
     setAnswerText(
       JSON.stringify(receiver.localDescription)
     )
+
+    const answerResponse = await fetch(
+  `${SIGNALING_BASE_URL}/rooms/${encodeURIComponent(SIGNALING_ROOM_ID)}/answer`,
+  {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(receiver.localDescription),
+  }
+)
+
+if (!answerResponse.ok) {
+  throw new Error(`Answer の自動送信に失敗しました: ${answerResponse.status}`)
+}
+
+console.log('Answerをシグナリングサーバーへ送信しました')
+    
   } catch (error) {
     console.error('Answer creation failed:', error)
     alert('Offerの読み込み、またはAnswerの生成に失敗しました')
