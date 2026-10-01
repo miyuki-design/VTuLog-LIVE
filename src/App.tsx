@@ -272,7 +272,8 @@ export default function App() {
   const [rtcStatus, setRtcStatus] = useState<
   'idle' | 'connecting' | 'connected' | 'failed'
 >('idle')
-
+const [rtcRole, setRtcRole] = useState<'sender' | 'receiver' | null>(null)
+  
 const [rtcDebug, setRtcDebug] = useState({
   senderGathering: 'new',
   senderIce: 'new',
@@ -1301,6 +1302,36 @@ await sender.setRemoteDescription(receiver.localDescription)
       />
     </button>
 
+  <div className="flex gap-2">
+  <button
+    onClick={() => setRtcRole('sender')}
+    className="glass rounded-xl px-3 py-2"
+    style={{
+      fontSize: '11px',
+      color:
+        rtcRole === 'sender'
+          ? 'var(--color-cyan)'
+          : 'var(--color-muted)',
+    }}
+  >
+    📱 送信側
+  </button>
+
+  <button
+    onClick={() => setRtcRole('receiver')}
+    className="glass rounded-xl px-3 py-2"
+    style={{
+      fontSize: '11px',
+      color:
+        rtcRole === 'receiver'
+          ? 'var(--color-cyan)'
+          : 'var(--color-muted)',
+    }}
+  >
+    💻 受信側
+  </button>
+</div>
+    
     <button
   onClick={rtcStatus === 'idle' ? startWebRTCTest : stopWebRTCTest}
   className="glass rounded-xl px-4 py-2"
