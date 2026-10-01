@@ -887,6 +887,15 @@ console.log('Answerをシグナリングサーバーへ送信しました')
     alert('Offerの読み込み、またはAnswerの生成に失敗しました')
   }
 }, [remoteOfferText])
+
+useEffect(() => {
+  if (rtcRole !== 'receiver') return
+
+  void createReceiverAnswer()
+
+  // 受信側を選択した瞬間に1回だけ実行する
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [rtcRole])
   
 // ── WebRTC self test ──
 const startWebRTCTest = useCallback(async () => {
