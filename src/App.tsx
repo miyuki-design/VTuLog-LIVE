@@ -800,25 +800,24 @@ const createReceiverAnswer = useCallback(async () => {
 
 if (!offerTextToUse) {
   const response = await fetch(
-    `${SIGNALING_BASE_URL}/rooms/${encodeURIComponent(SIGNALING_ROOM_ID)}/offer`,
-    { cache: 'no-store' }
-  )
+  `${SIGNALING_BASE_URL}/rooms/${encodeURIComponent(SIGNALING_ROOM_ID)}/offer`,
+  { cache: 'no-store' }
+)
 
-  if (!response.ok) {
-    alert('シグナリングサーバーにOfferがまだありません')
-    return
-  }
-
-  const data = await response.json()
-
-  if (data.status !== 'ok' || !data.description) {
-    alert('Offerを取得できませんでした')
-    return
-  }
-
-  offerTextToUse = JSON.stringify(data.description)
-  setRemoteOfferText(offerTextToUse)
+if (!response.ok) {
+  alert('シグナリングサーバーにOfferがまだありません')
+  return
 }
+
+const data = await response.json()
+
+if (data.status !== 'ok' || !data.description) {
+  alert('Offerを取得できませんでした')
+  return
+}
+
+const offerTextToUse = JSON.stringify(data.description)
+setRemoteOfferText(offerTextToUse)
 
   try {
     rtcReceiverRef.current?.close()
