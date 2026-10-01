@@ -210,6 +210,8 @@ function getTouchDist(t1: { clientX: number; clientY: number }, t2: { clientX: n
 const CW = 1080
 const CH = 1920
 
+const SIGNALING_BASE_URL = 'https://vtulog-signal.miminoz0822.workers.dev'
+
 export default function App() {
   // ── Camera ──
   const hiddenVideoRef = useRef<HTMLVideoElement>(null)
