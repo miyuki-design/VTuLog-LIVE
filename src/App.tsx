@@ -816,7 +816,7 @@ try {
         {/* header */}
         <div className="flex items-center justify-between px-5 pb-2 shrink-0 z-10">
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '26px', fontWeight: 600, lineHeight: 1, color: 'var(--color-text)' }}>
-            VTu<span style={{ color: 'var(--color-pink)' }}>Log</span>
+            VTu<span style={{ color: 'var(--color-pink)' }}>Log LIVE</span>
           </h1>
           <div className="flex items-center gap-2">
             {isCapturing && cameraReady && (
