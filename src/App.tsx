@@ -1081,7 +1081,10 @@ await sender.setRemoteDescription(receiver.localDescription)
     timerRef.current = setInterval(() => {
       setLiveTime(t => t + 1)
     }, 1000)
-  }, [])
+    // GO LIVEと同時に送信側としてOfferを自動生成
+    setRtcRole('sender')
+    void createSenderOffer()
+  }, [createSenderOffer])
 
     // ── Stop LIVE ──
   const stopLive = useCallback(() => {
