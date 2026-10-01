@@ -275,7 +275,15 @@ export default function App() {
   const [rtcStatus, setRtcStatus] = useState<
   'idle' | 'connecting' | 'connected' | 'failed'
 >('idle')
-const [rtcRole, setRtcRole] = useState<'sender' | 'receiver' | null>(null)
+const [rtcRole, setRtcRole] = useState<'sender' | 'receiver' | null>(() => {
+  const savedRole = localStorage.getItem('vtulog-rtc-role')
+
+  if (savedRole === 'sender' || savedRole === 'receiver') {
+    return savedRole
+  }
+
+  return null
+})
 const [offerText, setOfferText] = useState('')
 const [remoteOfferText, setRemoteOfferText] = useState('')
 const [answerText, setAnswerText] = useState('')
