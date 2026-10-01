@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useLive2D, LIVE2D_CANVAS_SIZE, type Live2DDiagnostics, type NormalizedFileInfo } from './useLive2D'
 
-type AppState = 'idle' | 'recording' | 'preview' | 'playing'
+type AppState = 'idle' | 'live'
 
 const PRESET_AVATARS = [
   { id: 'hana', name: 'ハナ', color: '#FF3FA4', hair: '#FF8BC8', eye: '#00E5FF' },
@@ -258,19 +258,14 @@ export default function App() {
   const pinchCenterRef = useRef({ x: 0, y: 0 })
   const pinchStartPosRef = useRef({ x: 0, y: 0 })
 
-  // ── Recording ──
+  // ── LIVE ──
   const [appState, setAppState] = useState<AppState>('idle')
-  const [recordingTime, setRecordingTime] = useState(0)
-  const [playbackTime, setPlaybackTime] = useState(0)
-  const [playbackDuration, setPlaybackDuration] = useState(0)
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const [liveTime, setLiveTime] = useState(0)
+
+  const liveStreamRef = useRef<MediaStream | null>(null)
   const audioStreamRef = useRef<MediaStream | null>(null)
-  const recordedChunksRef = useRef<Blob[]>([])
-  const recordedBlobRef = useRef<Blob | null>(null)
-  const recordedMimeTypeRef = useRef('video/webm')
-  const previewVideoRef = useRef<HTMLVideoElement>(null)
+
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const playbackTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // ── Live2D ──
   const live2d = useLive2D()
@@ -283,8 +278,8 @@ export default function App() {
   const [micError, setMicError] = useState<string | null>(null)
   const [videoTrackInfo, setVideoTrackInfo] = useState('')
 
-  const isCapturing = appState === 'idle' || appState === 'recording'
-  const isPreviewMode = appState === 'preview' || appState === 'playing'
+  const isCapturing = true
+  const isLive = appState === 'live'
   const presetAvatar = PRESET_AVATARS[selectedPreset]
   const isLive2DActive = live2d.status === 'loaded'
   const displayAvatarName = isLive2DActive ? live2d.modelName : useCustom ? avatarName : presetAvatar.name
