@@ -751,7 +751,20 @@ const startWebRTCTest = useCallback(async () => {
     <div className="h-full flex items-center justify-center" style={{ background: 'var(--color-bg)', fontFamily: 'var(--font-body)' }}>
       {/* hidden camera video source */}
       <video ref={hiddenVideoRef} autoPlay playsInline muted style={{ display: 'none' }} />
-
+      <video
+        ref={rtcPreviewRef}
+        autoPlay
+        playsInline
+        muted
+      style={{
+        position: 'absolute',
+        width: '1px',
+        height: '1px',
+        opacity: 0,
+        pointerEvents: 'none',
+        }}
+      />
+      
       {/* hidden file inputs */}
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
       {/* webkitdirectory lets user pick entire model folder */}
@@ -1197,6 +1210,24 @@ const startWebRTCTest = useCallback(async () => {
       />
     </button>
 
+    <button
+  onClick={rtcStatus === 'idle' ? startWebRTCTest : stopWebRTCTest}
+  className="glass rounded-xl px-4 py-2"
+  style={{
+    fontFamily: 'var(--font-display)',
+    fontSize: '11px',
+    color:
+      rtcStatus === 'connected'
+        ? 'var(--color-cyan)'
+        : 'var(--color-muted)',
+  }}
+>
+  {rtcStatus === 'idle' && 'WebRTC TEST'}
+  {rtcStatus === 'connecting' && 'WebRTC 接続中…'}
+  {rtcStatus === 'connected' && '✓ WebRTC 接続成功'}
+  {rtcStatus === 'failed' && 'WebRTC 接続失敗'}
+</button>
+    
     <p
       style={{
         fontSize: '11px',
