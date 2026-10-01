@@ -1519,6 +1519,33 @@ await sender.setRemoteDescription(receiver.localDescription)
   </div>
 )}
 
+<textarea
+  value={remoteAnswerText}
+  onChange={e => setRemoteAnswerText(e.target.value)}
+  placeholder="PCで作ったAnswerをここに貼り付け"
+  rows={4}
+  style={{
+    width: '100%',
+    fontSize: '9px',
+    padding: '8px',
+    borderRadius: '10px',
+    background: 'rgba(0,0,0,0.3)',
+    color: 'var(--color-cyan)',
+    border: '1px solid var(--color-border)',
+  }}
+/>
+
+<button
+  onClick={applyReceiverAnswer}
+  className="glass rounded-xl px-4 py-2"
+  style={{
+    fontSize: '11px',
+    color: 'var(--color-cyan)',
+  }}
+>
+  Answerを適用して接続
+</button>
+    
       </div>
 )}
 
