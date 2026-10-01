@@ -630,6 +630,14 @@ const startWebRTCTest = useCallback(async () => {
       if (rtcPreviewRef.current && remoteStream) {
         rtcPreviewRef.current.srcObject = remoteStream
         rtcPreviewRef.current.play().catch(() => {})
+
+        console.log(
+        'WebRTC received:',
+         remoteStream.getVideoTracks().length,
+        'video /',
+        remoteStream.getAudioTracks().length,
+        'audio'
+        )
       }
     }
 
@@ -752,18 +760,23 @@ const startWebRTCTest = useCallback(async () => {
       {/* hidden camera video source */}
       <video ref={hiddenVideoRef} autoPlay playsInline muted style={{ display: 'none' }} />
       <video
-        ref={rtcPreviewRef}
-        autoPlay
-        playsInline
-        muted
-      style={{
-        position: 'absolute',
-        width: '1px',
-        height: '1px',
-        opacity: 0,
-        pointerEvents: 'none',
-        }}
-      />
+  ref={rtcPreviewRef}
+  autoPlay
+  playsInline
+  muted
+  style={{
+    position: 'absolute',
+    right: '12px',
+    top: '12px',
+    width: '100px',
+    height: '178px',
+    objectFit: 'cover',
+    borderRadius: '12px',
+    zIndex: 50,
+    border: '2px solid var(--color-cyan)',
+    background: '#000',
+  }}
+/>
       
       {/* hidden file inputs */}
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
