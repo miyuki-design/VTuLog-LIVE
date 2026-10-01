@@ -648,8 +648,11 @@ const createSenderOffer = useCallback(async () => {
     rtcSenderRef.current = sender
 
     stream.getTracks().forEach(track => {
-      sender.addTrack(track, stream)
-    })
+  sender.addTransceiver(track, {
+    direction: 'sendonly',
+    streams: [stream],
+  })
+})
 
     const offer = await sender.createOffer()
     await sender.setLocalDescription(offer)
