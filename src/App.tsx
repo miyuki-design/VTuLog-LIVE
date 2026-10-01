@@ -588,6 +588,25 @@ const stopWebRTCTest = useCallback(() => {
   setRtcStatus('idle')
 }, [])
 
+const waitForIceGatheringComplete = (
+  pc: RTCPeerConnection
+): Promise<void> => {
+  if (pc.iceGatheringState === 'complete') {
+    return Promise.resolve()
+  }
+
+  return new Promise(resolve => {
+    const checkState = () => {
+      if (pc.iceGatheringState === 'complete') {
+        pc.removeEventListener('icegatheringstatechange', checkState)
+        resolve()
+      }
+    }
+
+    pc.addEventListener('icegatheringstatechange', checkState)
+  })
+}
+  
 // ── WebRTC self test ──
 const startWebRTCTest = useCallback(async () => {
   const stream = liveStreamRef.current
@@ -611,18 +630,6 @@ const startWebRTCTest = useCallback(async () => {
 
     rtcSenderRef.current = sender
     rtcReceiverRef.current = receiver
-
-    sender.onicecandidate = event => {
-      if (event.candidate) {
-        receiver.addIceCandidate(event.candidate).catch(console.error)
-      }
-    }
-
-    receiver.onicecandidate = event => {
-      if (event.candidate) {
-        sender.addIceCandidate(event.candidate).catch(console.error)
-      }
-    }
 
     receiver.ontrack = event => {
       const remoteStream = event.streams[0]
@@ -659,13 +666,27 @@ const startWebRTCTest = useCallback(async () => {
       sender.addTrack(track, stream)
     })
 
-    const offer = await sender.createOffer()
-    await sender.setLocalDescription(offer)
-    await receiver.setRemoteDescription(offer)
+   const offer = await sender.createOffer()
+await sender.setLocalDescription(offer)
 
-    const answer = await receiver.createAnswer()
-    await receiver.setLocalDescription(answer)
-    await sender.setRemoteDescription(answer)
+await waitForIceGatheringComplete(sender)
+
+if (!sender.localDescription) {
+  throw new Error('Offer の生成に失敗しました')
+}
+
+await receiver.setRemoteDescription(sender.localDescription)
+
+const answer = await receiver.createAnswer()
+await receiver.setLocalDescription(answer)
+
+await waitForIceGatheringComplete(receiver)
+
+if (!receiver.localDescription) {
+  throw new Error('Answer の生成に失敗しました')
+}
+
+await sender.setRemoteDescription(receiver.localDescription)
 
   } catch (error) {
     console.error('WebRTC self test failed', error)
