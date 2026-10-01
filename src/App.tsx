@@ -1545,6 +1545,24 @@ await sender.setRemoteDescription(receiver.localDescription)
 />
 
 <button
+  onClick={async () => {
+    try {
+      await navigator.clipboard.writeText(remoteAnswerText)
+      alert('貼り付けたAnswerをコピーしました')
+    } catch {
+      alert('コピーに失敗しました')
+    }
+  }}
+  className="glass rounded-xl px-4 py-2"
+  style={{
+    fontSize: '11px',
+    color: 'var(--color-cyan)',
+  }}
+>
+  貼り付けたAnswerをコピー
+</button>
+    
+<button
   onClick={applyReceiverAnswer}
   className="glass rounded-xl px-4 py-2"
   style={{
