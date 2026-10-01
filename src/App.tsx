@@ -703,10 +703,16 @@ const applyReceiverAnswer = useCallback(async () => {
 
     await sender.setRemoteDescription(parsedAnswer)
   } catch (error) {
-    console.error('Answer apply failed:', error)
-    setRtcStatus('failed')
-    alert('Answerの読み込みに失敗しました')
-  }
+  console.error('Answer apply failed:', error)
+  setRtcStatus('failed')
+
+  const message =
+    error instanceof Error
+      ? `${error.name}: ${error.message}`
+      : String(error)
+
+  alert(`Answerの読み込みに失敗しました\n\n${message}`)
+}
 }, [remoteAnswerText])
   
 const createReceiverAnswer = useCallback(async () => {
