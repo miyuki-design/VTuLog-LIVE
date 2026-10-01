@@ -1478,6 +1478,9 @@ await sender.setRemoteDescription(receiver.localDescription)
   </div>
 )}
 
+      </div>
+)}
+
 {rtcRole === 'receiver' && (
   <div className="w-full flex flex-col gap-2">
 
