@@ -669,6 +669,46 @@ const createSenderOffer = useCallback(async () => {
   }
 }, [])
 
+const applyReceiverAnswer = useCallback(async () => {
+  if (!remoteAnswerText.trim()) {
+    alert('PCで作ったAnswerを貼り付けてください')
+    return
+  }
+
+  const sender = rtcSenderRef.current
+
+  if (!sender) {
+    alert('先にOfferを作ってください')
+    return
+  }
+
+  try {
+    const parsedAnswer = JSON.parse(remoteAnswerText)
+
+    sender.onconnectionstatechange = () => {
+      if (sender.connectionState === 'connected') {
+        setRtcStatus('connected')
+      }
+
+      if (
+        sender.connectionState === 'failed' ||
+        sender.connectionState === 'disconnected' ||
+        sender.connectionState === 'closed'
+      ) {
+        setRtcStatus('failed')
+      }
+    }
+
+    setRtcStatus('connecting')
+
+    await sender.setRemoteDescription(parsedAnswer)
+  } catch (error) {
+    console.error('Answer apply failed:', error)
+    setRtcStatus('failed')
+    alert('Answerの読み込みに失敗しました')
+  }
+}, [remoteAnswerText])
+  
 const createReceiverAnswer = useCallback(async () => {
   if (!remoteOfferText.trim()) {
     alert('iPhoneで作ったOfferを貼り付けてください')
