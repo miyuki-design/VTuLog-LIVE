@@ -273,6 +273,7 @@ export default function App() {
   'idle' | 'connecting' | 'connected' | 'failed'
 >('idle')
 const [rtcRole, setRtcRole] = useState<'sender' | 'receiver' | null>(null)
+const [offerText, setOfferText] = useState('')
   
 const [rtcDebug, setRtcDebug] = useState({
   senderGathering: 'new',
@@ -621,6 +622,49 @@ const waitForIceGatheringComplete = (
     pc.addEventListener('icegatheringstatechange', checkState)
   })
 }
+
+const createSenderOffer = useCallback(async () => {
+  const stream = liveStreamRef.current
+
+  if (!stream) {
+    alert('先に GO LIVE を押してください')
+    return
+  }
+
+  try {
+    rtcSenderRef.current?.close()
+
+    const sender = new RTCPeerConnection({
+      iceServers: [
+        {
+          urls: 'stun:stun.cloudflare.com:3478',
+        },
+      ],
+    })
+
+    rtcSenderRef.current = sender
+
+    stream.getTracks().forEach(track => {
+      sender.addTrack(track, stream)
+    })
+
+    const offer = await sender.createOffer()
+    await sender.setLocalDescription(offer)
+
+    await waitForIceGatheringComplete(sender)
+
+    if (!sender.localDescription) {
+      throw new Error('Offer の生成に失敗しました')
+    }
+
+    setOfferText(
+      JSON.stringify(sender.localDescription)
+    )
+  } catch (error) {
+    console.error('Offer creation failed:', error)
+    alert('Offer の生成に失敗しました')
+  }
+}, [])
   
 // ── WebRTC self test ──
 const startWebRTCTest = useCallback(async () => {
@@ -1331,6 +1375,38 @@ await sender.setRemoteDescription(receiver.localDescription)
     💻 受信側
   </button>
 </div>
+
+{rtcRole === 'sender' && (
+  <div className="w-full flex flex-col gap-2">
+    <button
+      onClick={createSenderOffer}
+      className="glass rounded-xl px-4 py-2"
+      style={{
+        fontSize: '11px',
+        color: 'var(--color-cyan)',
+      }}
+    >
+      Offerを作る
+    </button>
+
+    {offerText && (
+      <textarea
+        value={offerText}
+        readOnly
+        rows={4}
+        style={{
+          width: '100%',
+          fontSize: '9px',
+          padding: '8px',
+          borderRadius: '10px',
+          background: 'rgba(0,0,0,0.3)',
+          color: 'var(--color-cyan)',
+          border: '1px solid var(--color-border)',
+        }}
+      />
+    )}
+  </div>
+)}
     
     <button
   onClick={rtcStatus === 'idle' ? startWebRTCTest : stopWebRTCTest}
