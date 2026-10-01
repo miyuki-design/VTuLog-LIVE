@@ -265,6 +265,14 @@ export default function App() {
   const liveStreamRef = useRef<MediaStream | null>(null)
   const audioStreamRef = useRef<MediaStream | null>(null)
 
+  const rtcSenderRef = useRef<RTCPeerConnection | null>(null)
+  const rtcReceiverRef = useRef<RTCPeerConnection | null>(null)
+  const rtcPreviewRef = useRef<HTMLVideoElement>(null)
+
+  const [rtcStatus, setRtcStatus] = useState<
+    'idle' | 'connecting' | 'connected' | 'failed'
+  >('idle')
+
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // ── Live2D ──
@@ -565,6 +573,99 @@ export default function App() {
     e.target.value = ''
   }, [])
 
+    // ── Stop WebRTC test ──
+const stopWebRTCTest = useCallback(() => {
+  rtcSenderRef.current?.close()
+  rtcReceiverRef.current?.close()
+
+  rtcSenderRef.current = null
+  rtcReceiverRef.current = null
+
+  if (rtcPreviewRef.current) {
+    rtcPreviewRef.current.srcObject = null
+  }
+
+  setRtcStatus('idle')
+}, [])
+
+// ── WebRTC self test ──
+const startWebRTCTest = useCallback(async () => {
+  const stream = liveStreamRef.current
+
+  if (!stream) {
+    setRtcStatus('failed')
+    return
+  }
+
+  stopWebRTCTest()
+  setRtcStatus('connecting')
+
+  try {
+    const sender = new RTCPeerConnection({
+      iceServers: [],
+    })
+
+    const receiver = new RTCPeerConnection({
+      iceServers: [],
+    })
+
+    rtcSenderRef.current = sender
+    rtcReceiverRef.current = receiver
+
+    sender.onicecandidate = event => {
+      if (event.candidate) {
+        receiver.addIceCandidate(event.candidate).catch(console.error)
+      }
+    }
+
+    receiver.onicecandidate = event => {
+      if (event.candidate) {
+        sender.addIceCandidate(event.candidate).catch(console.error)
+      }
+    }
+
+    receiver.ontrack = event => {
+      const remoteStream = event.streams[0]
+
+      if (rtcPreviewRef.current && remoteStream) {
+        rtcPreviewRef.current.srcObject = remoteStream
+        rtcPreviewRef.current.play().catch(() => {})
+      }
+    }
+
+    receiver.onconnectionstatechange = () => {
+      if (receiver.connectionState === 'connected') {
+        setRtcStatus('connected')
+      }
+
+      if (
+        receiver.connectionState === 'failed' ||
+        receiver.connectionState === 'disconnected' ||
+        receiver.connectionState === 'closed'
+      ) {
+        setRtcStatus('failed')
+      }
+    }
+
+    stream.getTracks().forEach(track => {
+      sender.addTrack(track, stream)
+    })
+
+    const offer = await sender.createOffer()
+    await sender.setLocalDescription(offer)
+    await receiver.setRemoteDescription(offer)
+
+    const answer = await receiver.createAnswer()
+    await receiver.setLocalDescription(answer)
+    await sender.setRemoteDescription(answer)
+
+  } catch (error) {
+    console.error('WebRTC self test failed', error)
+    stopWebRTCTest()
+    setRtcStatus('failed')
+  }
+}, [stopWebRTCTest])
+  
     // ── Start LIVE ──
   const startLive = useCallback(async () => {
     const canvas = canvasRef.current
@@ -622,6 +723,7 @@ export default function App() {
 
     // ── Stop LIVE ──
   const stopLive = useCallback(() => {
+    stopWebRTCTest()
     if (timerRef.current) {
       clearInterval(timerRef.current)
       timerRef.current = null
@@ -635,7 +737,7 @@ export default function App() {
 
     setAppState('idle')
     setLiveTime(0)
-  }, [])
+  }, [stopWebRTCTest])
 
   // ── Cleanup ──
   useEffect(() => () => {
