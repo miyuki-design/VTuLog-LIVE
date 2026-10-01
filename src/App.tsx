@@ -692,6 +692,31 @@ if (!response.ok) {
 }
 
 console.log('Offerをシグナリングサーバーへ送信しました')
+
+// PCからAnswerが届くまで自動で待つ
+for (let i = 0; i < 60; i++) {
+  await new Promise(resolve => setTimeout(resolve, 1000))
+
+  const answerResponse = await fetch(
+    `${SIGNALING_BASE_URL}/rooms/${encodeURIComponent(SIGNALING_ROOM_ID)}/answer`,
+    { cache: 'no-store' }
+  )
+
+  if (!answerResponse.ok) {
+    continue
+  }
+
+  const data = await answerResponse.json()
+
+  if (data.status === 'ok' && data.description) {
+    await sender.setRemoteDescription(data.description)
+    setRemoteAnswerText(JSON.stringify(data.description))
+    setRtcStatus('connected')
+
+    console.log('Answerを自動取得して接続しました')
+    break
+  }
+}
     
   } catch (error) {
     console.error('Offer creation failed:', error)
