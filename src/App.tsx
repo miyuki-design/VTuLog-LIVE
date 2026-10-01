@@ -783,33 +783,29 @@ export default function App() {
             </div>
           )}
 
-          {/* REC indicator */}
-          {appState === 'recording' && (
-            <div className="absolute top-4 left-4 flex items-center gap-2 glass rounded-full px-3 py-1.5" style={{ zIndex: 20 }}>
-              <div className="w-2 h-2 rounded-full animate-rec-blink" style={{ background: 'var(--color-rec)' }} />
-              <span style={{ fontFamily: 'var(--font-display)', fontSize: '13px', color: 'var(--color-rec)', fontWeight: 600 }}>
-                REC {formatTime(recordingTime)}
-              </span>
-            </div>
-          )}
+         {/* LIVE indicator */}
+      {isLive && (
+        <div
+          className="absolute top-4 left-4 flex items-center gap-2 glass rounded-full px-3 py-1.5"
+          style={{ zIndex: 20 }}
+        >
+        <div
+          className="w-2 h-2 rounded-full animate-rec-blink"
+          style={{ background: 'var(--color-rec)' }}
+        />
 
-          {/* Preview badge */}
-          {isPreviewMode && (
-            <div className="absolute top-4 left-4 glass rounded-full px-3 py-1.5 animate-fade-in" style={{ zIndex: 20 }}>
-              <span style={{ fontFamily: 'var(--font-display)', fontSize: '13px', color: 'var(--color-cyan)', fontWeight: 600 }}>
-                {appState === 'playing' ? `▶ ${formatTime(playbackTime)}` : '⏸ プレビュー'}
-              </span>
-            </div>
-          )}
-
-          {/* Playback progress bar */}
-          {isPreviewMode && (
-            <div className="absolute bottom-0 left-0 right-0 h-1" style={{ zIndex: 20 }}>
-              <div className="h-full progress-bar transition-all"
-                style={{ width: appState === 'playing' ? `${(playbackTime / playbackDuration) * 100}%` : '100%', opacity: appState === 'playing' ? 1 : 0.3 }} />
-            </div>
-          )}
-
+    <span
+      style={{
+        fontFamily: 'var(--font-display)',
+        fontSize: '13px',
+        color: 'var(--color-rec)',
+        fontWeight: 600,
+      }}
+    >
+      LIVE {formatTime(liveTime)}
+    </span>
+  </div>
+)}  
           {/* ── Avatar controls (scale + picker trigger) ── */}
           {isCapturing && (
             <div className="absolute left-3 bottom-4 flex flex-col gap-2" style={{ zIndex: 20 }}>
