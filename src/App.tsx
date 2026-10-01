@@ -732,7 +732,7 @@ if (!answerTextToUse) {
   }
 
   try {
-    const parsedAnswer = JSON.parse(remoteAnswerText)
+    const parsedAnswer = JSON.parse(answerTextToUse)
 
     const fingerprintLine = parsedAnswer.sdp
     .split('\r\n')
