@@ -692,13 +692,32 @@ export default function App() {
             VTu<span style={{ color: 'var(--color-pink)' }}>Log LIVE</span>
           </h1>
           <div className="flex items-center gap-2">
-            {isCapturing && cameraReady && (
-              <div className="flex items-center gap-1.5 glass rounded-full px-3 py-1">
-                <div className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--color-cyan)' }} />
-                <span style={{ fontSize: '10px', color: 'var(--color-cyan)', fontFamily: 'var(--font-display)' }}>LIVE</span>
-              </div>
-            )}
-          </div>
+  {cameraReady && (
+    <div className="flex items-center gap-1.5 glass rounded-full px-3 py-1">
+      <div
+        className={`w-1.5 h-1.5 rounded-full ${isLive ? 'animate-rec-blink' : ''}`}
+        style={{
+          background: isLive
+            ? 'var(--color-rec)'
+            : 'var(--color-cyan)',
+        }}
+      />
+
+      <span
+        style={{
+          fontSize: '10px',
+          color: isLive
+            ? 'var(--color-rec)'
+            : 'var(--color-cyan)',
+          fontFamily: 'var(--font-display)',
+          fontWeight: 600,
+        }}
+      >
+        {isLive ? 'LIVE' : 'READY'}
+      </span>
+    </div>
+  )}
+</div>
         </div>
 
         {videoTrackInfo && (
