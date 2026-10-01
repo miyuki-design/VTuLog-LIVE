@@ -752,10 +752,29 @@ const applyReceiverAnswer = useCallback(async () => {
 }, [remoteAnswerText])
   
 const createReceiverAnswer = useCallback(async () => {
-  if (!remoteOfferText.trim()) {
-    alert('iPhoneで作ったOfferを貼り付けてください')
+ let offerTextToUse = remoteOfferText.trim()
+
+if (!offerTextToUse) {
+  const response = await fetch(
+    `${SIGNALING_BASE_URL}/rooms/${encodeURIComponent(SIGNALING_ROOM_ID)}/offer`,
+    { cache: 'no-store' }
+  )
+
+  if (!response.ok) {
+    alert('シグナリングサーバーにOfferがまだありません')
     return
   }
+
+  const data = await response.json()
+
+  if (data.status !== 'ok' || !data.description) {
+    alert('Offerを取得できませんでした')
+    return
+  }
+
+  offerTextToUse = JSON.stringify(data.description)
+  setRemoteOfferText(offerTextToUse)
+}
 
   try {
     rtcReceiverRef.current?.close()
@@ -785,8 +804,8 @@ const createReceiverAnswer = useCallback(async () => {
   }
 }
 
-    const parsedOffer = JSON.parse(remoteOfferText)
-
+    const parsedOffer = JSON.parse(offerTextToUse)
+    
     await receiver.setRemoteDescription(parsedOffer)
 
     const answer = await receiver.createAnswer()
