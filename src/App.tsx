@@ -1441,22 +1441,40 @@ await sender.setRemoteDescription(receiver.localDescription)
       Offerを作る
     </button>
 
-    {offerText && (
-      <textarea
-        value={offerText}
-        readOnly
-        rows={4}
-        style={{
-          width: '100%',
-          fontSize: '9px',
-          padding: '8px',
-          borderRadius: '10px',
-          background: 'rgba(0,0,0,0.3)',
-          color: 'var(--color-cyan)',
-          border: '1px solid var(--color-border)',
-        }}
-      />
-    )}
+   {offerText && (
+  <div className="w-full flex flex-col gap-2">
+    <textarea
+      value={offerText}
+      readOnly
+      rows={4}
+      style={{
+        width: '100%',
+        fontSize: '9px',
+        padding: '8px',
+        borderRadius: '10px',
+        background: 'rgba(0,0,0,0.3)',
+        color: 'var(--color-cyan)',
+        border: '1px solid var(--color-border)',
+      }}
+    />
+
+    <button
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(offerText)
+          alert('Offerをコピーしました')
+        } catch {
+          alert('コピーに失敗しました')
+        }
+      }}
+      className="glass rounded-xl px-4 py-2"
+      style={{
+        fontSize: '11px',
+        color: 'var(--color-cyan)',
+      }}
+    >
+      Offerをコピー
+    </button>
   </div>
 )}
 
