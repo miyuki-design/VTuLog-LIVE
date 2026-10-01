@@ -566,200 +566,77 @@ export default function App() {
     e.target.value = ''
   }, [])
 
-  // ── Start recording ──
-  const startRecording = useCallback(async () => {
+    // ── Start LIVE ──
+  const startLive = useCallback(async () => {
     const canvas = canvasRef.current
     if (!canvas) return
+
     setMicError(null)
-    recordedChunksRef.current = []
-    recordedBlobRef.current = null
 
     let audioStream: MediaStream | null = null
+
     try {
       audioStream = await navigator.mediaDevices.getUserMedia({
-  audio: {
-    sampleRate: { ideal: 48000 },
-    channelCount: { ideal: 1 },
-    echoCancellation: true,
-    noiseSuppression: true,
-    autoGainControl: true,
-  },
-})
+        audio: {
+          sampleRate: { ideal: 48000 },
+          channelCount: { ideal: 1 },
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      })
+
       audioStreamRef.current = audioStream
     } catch {
-      setMicError('マイクへのアクセスが拒否されました（映像のみ録画）')
+      setMicError('マイクへのアクセスが拒否されました（映像のみLIVE）')
     }
 
-    const canvasStream = (canvas as HTMLCanvasElement & { captureStream(fps?: number): MediaStream }).captureStream(30)
+    const canvasStream = (
+      canvas as HTMLCanvasElement & {
+        captureStream(fps?: number): MediaStream
+      }
+    ).captureStream(30)
+
     const videoTrack = canvasStream.getVideoTracks()[0]
     const settings = videoTrack.getSettings()
 
     setVideoTrackInfo(
-    `Canvas: ${canvas.width}×${canvas.height} / Track: ${settings.width ?? '?'}×${settings.height ?? '?'} / ${settings.frameRate ?? '?'}fps`
+      `Canvas: ${canvas.width}×${canvas.height} / Track: ${settings.width ?? '?'}×${settings.height ?? '?'} / ${settings.frameRate ?? '?'}fps`
     )
-    
-    const tracks = [...canvasStream.getVideoTracks(), ...(audioStream?.getAudioTracks() ?? [])]
-    const combined = new MediaStream(tracks)
 
-    const mimeCandidates = [
-      'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
-      'video/mp4',
-      'video/webm;codecs=vp9,opus',
-      'video/webm;codecs=vp8,opus',
-      'video/webm',
+    const tracks = [
+      ...canvasStream.getVideoTracks(),
+      ...(audioStream?.getAudioTracks() ?? []),
     ]
 
-    const mimeType = mimeCandidates.find(type => MediaRecorder.isTypeSupported(type)) ?? ''
+    const liveStream = new MediaStream(tracks)
 
-    const recorderOptions: MediaRecorderOptions = {
-  videoBitsPerSecond: 20_000_000,
-  audioBitsPerSecond: 192_000,
-}
+    liveStreamRef.current = liveStream
 
-if (mimeType) {
-  recorderOptions.mimeType = mimeType
-}
+    setLiveTime(0)
+    setAppState('live')
 
-let mr: MediaRecorder
-
-try {
-  mr = new MediaRecorder(combined, recorderOptions)
-} catch {
-  try {
-    mr = mimeType
-      ? new MediaRecorder(combined, { mimeType })
-      : new MediaRecorder(combined)
-  } catch {
-    mr = new MediaRecorder(combined)
-  }
-}
-
-    const actualMimeType = mr.mimeType || mimeType || 'video/webm'
-    recordedMimeTypeRef.current = actualMimeType
-
-    mr.ondataavailable = ev => {
-      if (ev.data.size > 0) recordedChunksRef.current.push(ev.data)
-    }
-
-    mr.onstop = () => {
-      audioStreamRef.current?.getTracks().forEach(t => t.stop())
-      audioStreamRef.current = null
-
-      const blob = new Blob(recordedChunksRef.current, { type: actualMimeType })
-      recordedBlobRef.current = blob
-
-      if (previewVideoRef.current) {
-        previewVideoRef.current.src = URL.createObjectURL(blob)
-      }
-    }
-    mr.start(1000)
-    mediaRecorderRef.current = mr
-
-    setRecordingTime(0)
-    setAppState('recording')
-    timerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000)
-  }, [])
-
-  // ── Stop recording ──
-  const stopRecording = useCallback(() => {
-    if (timerRef.current) clearInterval(timerRef.current)
-    const dur = recordingTime || 1
-    setPlaybackDuration(dur)
-    setPlaybackTime(0)
-
-    const mr = mediaRecorderRef.current
-    if (mr && mr.state !== 'inactive') mr.stop()
-    mediaRecorderRef.current = null
-    setAppState('preview')
-  }, [recordingTime])
-
-  // ── Playback ──
-  const startPlayback = useCallback(() => {
-    setPlaybackTime(0)
-    setAppState('playing')
-    const pv = previewVideoRef.current
-    if (pv && recordedBlobRef.current) {
-      pv.currentTime = 0
-      pv.play()
-      pv.onended = () => { setAppState('preview'); setPlaybackTime(0) }
-    }
-    playbackTimerRef.current = setInterval(() => {
-      setPlaybackTime(t => {
-        if (t + 1 >= playbackDuration) { clearInterval(playbackTimerRef.current!); return t + 1 }
-        return t + 1
-      })
+    timerRef.current = setInterval(() => {
+      setLiveTime(t => t + 1)
     }, 1000)
-  }, [playbackDuration])
-
-  const stopPlayback = useCallback(() => {
-    if (playbackTimerRef.current) clearInterval(playbackTimerRef.current)
-    previewVideoRef.current?.pause()
-    setAppState('preview')
-    setPlaybackTime(0)
   }, [])
 
-  // ── Retake ──
-  const retake = useCallback(async () => {
-  if (playbackTimerRef.current) clearInterval(playbackTimerRef.current)
-
-  const pv = previewVideoRef.current
-  if (pv) {
-    pv.pause()
-    pv.src = ''
-  }
-
-  recordedBlobRef.current = null
-  setRecordingTime(0)
-  setPlaybackTime(0)
-  setAppState('idle')
-
-  // 保存画面などを挟んでカメラが停止していたら再起動
-  const currentTrack = cameraStreamRef.current?.getVideoTracks()[0]
-
-  if (!currentTrack || currentTrack.readyState !== 'live') {
-    try {
-      setCameraReady(false)
-      setCameraError(null)
-
-      const s = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: 'environment' },
-          width: { ideal: 3840 },
-          height: { ideal: 2160 },
-          frameRate: { ideal: 30, max: 30 },
-        },
-        audio: false,
-      })
-
-      cameraStreamRef.current = s
-
-      const v = hiddenVideoRef.current
-      if (v) {
-        v.srcObject = s
-        await v.play()
-        setCameraReady(true)
-      }
-    } catch (e) {
-      setCameraError('カメラを再起動できませんでした')
+    // ── Stop LIVE ──
+  const stopLive = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current)
+      timerRef.current = null
     }
-  }
-}, [])
 
-  // ── Save ──
-  const save = useCallback(() => {
-    const blob = recordedBlobRef.current
-    if (blob) {
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      const ext = recordedMimeTypeRef.current.includes('mp4') ? 'mp4' : 'webm'
-      a.href = url
-      a.download = `VTuLog_${Date.now()}.${ext}`
-      a.click()
-      setTimeout(() => URL.revokeObjectURL(url), 2000)
-    }
-    setShowSaved(true)
-    setTimeout(() => { setShowSaved(false); retake() }, 2200)
-  }, [retake])
+    audioStreamRef.current?.getTracks().forEach(track => track.stop())
+    audioStreamRef.current = null
+
+    liveStreamRef.current?.getTracks().forEach(track => track.stop())
+    liveStreamRef.current = null
+
+    setAppState('idle')
+    setLiveTime(0)
+  }, [])
 
   // ── Cleanup ──
   useEffect(() => () => {
