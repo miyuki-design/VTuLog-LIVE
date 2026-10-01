@@ -793,12 +793,10 @@ if (!answerTextToUse) {
 
   alert(`Answerの読み込みに失敗しました\n\n${message}`)
 }
-}, [remoteAnswerText])
+}, [])
   
 const createReceiverAnswer = useCallback(async () => {
- let offerTextToUse = remoteOfferText.trim()
-
-if (!offerTextToUse) {
+ 
   const response = await fetch(
   `${SIGNALING_BASE_URL}/rooms/${encodeURIComponent(SIGNALING_ROOM_ID)}/offer`,
   { cache: 'no-store' }
