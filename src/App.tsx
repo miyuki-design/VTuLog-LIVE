@@ -691,17 +691,18 @@ export default function App() {
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '26px', fontWeight: 600, lineHeight: 1, color: 'var(--color-text)' }}>
             VTu<span style={{ color: 'var(--color-pink)' }}>Log LIVE</span>
           </h1>
+          
           <div className="flex items-center gap-2">
-  {cameraReady && (
-    <div className="flex items-center gap-1.5 glass rounded-full px-3 py-1">
-      <div
-        className={`w-1.5 h-1.5 rounded-full ${isLive ? 'animate-rec-blink' : ''}`}
-        style={{
-          background: isLive
-            ? 'var(--color-rec)'
-            : 'var(--color-cyan)',
-        }}
-      />
+          {cameraReady && (
+            <div className="flex items-center gap-1.5 glass rounded-full px-3 py-1">
+            <div
+              className={`w-1.5 h-1.5 rounded-full ${isLive ? 'animate-rec-blink' : ''}`}
+              style={{
+              background: isLive
+              ? 'var(--color-rec)'
+              : 'var(--color-cyan)',
+            }}
+          />
 
       <span
         style={{
