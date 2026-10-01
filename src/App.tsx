@@ -270,10 +270,17 @@ export default function App() {
   const rtcPreviewRef = useRef<HTMLVideoElement>(null)
 
   const [rtcStatus, setRtcStatus] = useState<
-    'idle' | 'connecting' | 'connected' | 'failed'
-  >('idle')
+  'idle' | 'connecting' | 'connected' | 'failed'
+>('idle')
 
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+const [rtcDebug, setRtcDebug] = useState({
+  senderGathering: 'new',
+  senderIce: 'new',
+  receiverGathering: 'new',
+  receiverIce: 'new',
+})
+
+const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // ── Live2D ──
   const live2d = useLive2D()
@@ -585,6 +592,13 @@ const stopWebRTCTest = useCallback(() => {
     rtcPreviewRef.current.srcObject = null
   }
 
+  setRtcDebug({
+  senderGathering: 'new',
+  senderIce: 'new',
+  receiverGathering: 'new',
+  receiverIce: 'new',
+})
+  
   setRtcStatus('idle')
 }, [])
 
@@ -631,6 +645,41 @@ const startWebRTCTest = useCallback(async () => {
     rtcSenderRef.current = sender
     rtcReceiverRef.current = receiver
 
+    setRtcDebug({
+  senderGathering: sender.iceGatheringState,
+  senderIce: sender.iceConnectionState,
+  receiverGathering: receiver.iceGatheringState,
+  receiverIce: receiver.iceConnectionState,
+})
+
+sender.onicegatheringstatechange = () => {
+  setRtcDebug(prev => ({
+    ...prev,
+    senderGathering: sender.iceGatheringState,
+  }))
+}
+
+sender.oniceconnectionstatechange = () => {
+  setRtcDebug(prev => ({
+    ...prev,
+    senderIce: sender.iceConnectionState,
+  }))
+}
+
+receiver.onicegatheringstatechange = () => {
+  setRtcDebug(prev => ({
+    ...prev,
+    receiverGathering: receiver.iceGatheringState,
+  }))
+}
+
+receiver.oniceconnectionstatechange = () => {
+  setRtcDebug(prev => ({
+    ...prev,
+    receiverIce: receiver.iceConnectionState,
+  }))
+}
+    
     receiver.ontrack = event => {
       const remoteStream = event.streams[0]
 
@@ -1261,6 +1310,23 @@ await sender.setRemoteDescription(receiver.localDescription)
   {rtcStatus === 'connected' && '✓ WebRTC 接続成功'}
   {rtcStatus === 'failed' && 'WebRTC 接続失敗'}
 </button>
+
+{rtcStatus !== 'idle' && (
+  <div
+    className="glass rounded-xl px-3 py-2"
+    style={{
+      fontFamily: 'monospace',
+      fontSize: '10px',
+      color: 'var(--color-cyan)',
+      lineHeight: 1.5,
+    }}
+  >
+    <div>sender gather: {rtcDebug.senderGathering}</div>
+    <div>sender ICE: {rtcDebug.senderIce}</div>
+    <div>receiver gather: {rtcDebug.receiverGathering}</div>
+    <div>receiver ICE: {rtcDebug.receiverIce}</div>
+  </div>
+)}
     
     <p
       style={{
