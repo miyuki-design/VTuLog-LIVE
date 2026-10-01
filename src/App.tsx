@@ -688,6 +688,12 @@ const applyReceiverAnswer = useCallback(async () => {
   try {
     const parsedAnswer = JSON.parse(remoteAnswerText)
 
+    const fingerprintLine = parsedAnswer.sdp
+    .split('\r\n')
+    .find((line: string) => line.startsWith('a=fingerprint:'))
+
+    alert(fingerprintLine ?? 'fingerprintが見つかりません')
+    
     sender.onconnectionstatechange = () => {
       if (sender.connectionState === 'connected') {
         setRtcStatus('connected')
