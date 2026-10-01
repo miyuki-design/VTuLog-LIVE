@@ -211,6 +211,7 @@ const CW = 1080
 const CH = 1920
 
 const SIGNALING_BASE_URL = 'https://vtulog-signal.miminoz0822.workers.dev'
+const SIGNALING_ROOM_ID = 'mimi-live'
 
 export default function App() {
   // ── Camera ──
