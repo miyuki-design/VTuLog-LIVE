@@ -274,6 +274,8 @@ export default function App() {
 >('idle')
 const [rtcRole, setRtcRole] = useState<'sender' | 'receiver' | null>(null)
 const [offerText, setOfferText] = useState('')
+const [remoteOfferText, setRemoteOfferText] = useState('')
+const [answerText, setAnswerText] = useState('')
   
 const [rtcDebug, setRtcDebug] = useState({
   senderGathering: 'new',
