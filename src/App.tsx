@@ -635,12 +635,20 @@ const startWebRTCTest = useCallback(async () => {
 
   try {
     const sender = new RTCPeerConnection({
-      iceServers: [],
-    })
+  iceServers: [
+    {
+      urls: 'stun:stun.cloudflare.com:3478',
+    },
+  ],
+})
 
-    const receiver = new RTCPeerConnection({
-      iceServers: [],
-    })
+const receiver = new RTCPeerConnection({
+  iceServers: [
+    {
+      urls: 'stun:stun.cloudflare.com:3478',
+    },
+  ],
+})
 
     rtcSenderRef.current = sender
     rtcReceiverRef.current = receiver
