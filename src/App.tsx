@@ -633,6 +633,56 @@ const createSenderOffer = useCallback(async () => {
     return
   }
 
+const createReceiverAnswer = useCallback(async () => {
+  if (!remoteOfferText.trim()) {
+    alert('iPhoneで作ったOfferを貼り付けてください')
+    return
+  }
+
+  try {
+    rtcReceiverRef.current?.close()
+
+    const receiver = new RTCPeerConnection({
+      iceServers: [
+        {
+          urls: 'stun:stun.cloudflare.com:3478',
+        },
+      ],
+    })
+
+    rtcReceiverRef.current = receiver
+
+    receiver.ontrack = event => {
+      const remoteStream = event.streams[0]
+
+      if (rtcPreviewRef.current && remoteStream) {
+        rtcPreviewRef.current.srcObject = remoteStream
+        rtcPreviewRef.current.play().catch(() => {})
+      }
+    }
+
+    const parsedOffer = JSON.parse(remoteOfferText)
+
+    await receiver.setRemoteDescription(parsedOffer)
+
+    const answer = await receiver.createAnswer()
+    await receiver.setLocalDescription(answer)
+
+    await waitForIceGatheringComplete(receiver)
+
+    if (!receiver.localDescription) {
+      throw new Error('Answer の生成に失敗しました')
+    }
+
+    setAnswerText(
+      JSON.stringify(receiver.localDescription)
+    )
+  } catch (error) {
+    console.error('Answer creation failed:', error)
+    alert('Offerの読み込み、またはAnswerの生成に失敗しました')
+  }
+}, [remoteOfferText])
+  
   try {
     rtcSenderRef.current?.close()
 
