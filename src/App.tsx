@@ -273,7 +273,6 @@ export default function App() {
   const live2dFolderInputRef = useRef<HTMLInputElement>(null)
 
   // ── UI ──
-  const [showSaved, setShowSaved] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [micError, setMicError] = useState<string | null>(null)
   const [videoTrackInfo, setVideoTrackInfo] = useState('')
@@ -699,11 +698,6 @@ export default function App() {
                 <span style={{ fontSize: '10px', color: 'var(--color-cyan)', fontFamily: 'var(--font-display)' }}>LIVE</span>
               </div>
             )}
-            {isPreviewMode && (
-              <div className="glass rounded-full px-3 py-1" style={{ fontSize: '11px', color: 'var(--color-muted)' }}>
-                {formatTime(playbackDuration)}
-              </div>
-            )}
           </div>
         </div>
 
@@ -1008,14 +1002,14 @@ export default function App() {
         <div className="shrink-0 px-5 pt-3 pb-6">
 
           {appState === 'idle' && (
-  <div className="flex flex-col items-center gap-3 animate-fade-in">
-    <p
-      style={{
-        fontSize: '11px',
-        color: 'var(--color-muted)',
-        fontFamily: 'var(--font-display)',
-      }}
-    >
+        <div className="flex flex-col items-center gap-3 animate-fade-in">
+        <p
+          style={{
+          fontSize: '11px',
+          color: 'var(--color-muted)',
+          fontFamily: 'var(--font-display)',
+          }}
+        >
       ドラッグで移動 / ピンチ・ボタンで拡縮
     </p>
 
@@ -1093,17 +1087,6 @@ export default function App() {
   </div>
 )}
          
-        {/* saved toast */}
-        {showSaved && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 50 }}>
-            <div className="glass rounded-3xl px-8 py-6 flex flex-col items-center gap-3 animate-zoom-in"
-              style={{ border: '1px solid rgba(255,63,164,0.5)', boxShadow: '0 0 40px rgba(255,63,164,0.3)' }}>
-              <div style={{ fontSize: '48px' }}>✨</div>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--color-pink)', fontWeight: 600 }}>保存しました！</div>
-              <div style={{ fontSize: '13px', color: 'var(--color-muted)' }}>端末にダウンロードされました</div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )
