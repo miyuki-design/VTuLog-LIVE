@@ -1409,6 +1409,56 @@ await sender.setRemoteDescription(receiver.localDescription)
     )}
   </div>
 )}
+
+{rtcRole === 'receiver' && (
+  <div className="w-full flex flex-col gap-2">
+
+    <textarea
+      value={remoteOfferText}
+      onChange={e => setRemoteOfferText(e.target.value)}
+      placeholder="iPhoneで作ったOfferをここに貼り付け"
+      rows={4}
+      style={{
+        width: '100%',
+        fontSize: '9px',
+        padding: '8px',
+        borderRadius: '10px',
+        background: 'rgba(0,0,0,0.3)',
+        color: 'var(--color-cyan)',
+        border: '1px solid var(--color-border)',
+      }}
+    />
+
+    <button
+      onClick={createReceiverAnswer}
+      className="glass rounded-xl px-4 py-2"
+      style={{
+        fontSize: '11px',
+        color: 'var(--color-cyan)',
+      }}
+    >
+      Answerを作る
+    </button>
+
+    {answerText && (
+      <textarea
+        value={answerText}
+        readOnly
+        rows={4}
+        style={{
+          width: '100%',
+          fontSize: '9px',
+          padding: '8px',
+          borderRadius: '10px',
+          background: 'rgba(0,0,0,0.3)',
+          color: 'var(--color-cyan)',
+          border: '1px solid var(--color-border)',
+        }}
+      />
+    )}
+
+  </div>
+)}
     
     <button
   onClick={rtcStatus === 'idle' ? startWebRTCTest : stopWebRTCTest}
