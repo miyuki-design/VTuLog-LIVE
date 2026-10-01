@@ -894,13 +894,14 @@ console.log('Answerをシグナリングサーバーへ送信しました')
 }, [])
 
 useEffect(() => {
+  if (appState !== 'live') return
   if (rtcRole !== 'receiver') return
 
   void createReceiverAnswer()
 
-  // 受信側を選択した瞬間に1回だけ実行する
+  // LIVE開始後、受信側のときだけ実行する
   // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [rtcRole])
+}, [appState, rtcRole])
   
 // ── WebRTC self test ──
 const startWebRTCTest = useCallback(async () => {
