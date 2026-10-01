@@ -633,6 +633,41 @@ const createSenderOffer = useCallback(async () => {
     return
   }
 
+  try {
+    rtcSenderRef.current?.close()
+
+    const sender = new RTCPeerConnection({
+      iceServers: [
+        {
+          urls: 'stun:stun.cloudflare.com:3478',
+        },
+      ],
+    })
+
+    rtcSenderRef.current = sender
+
+    stream.getTracks().forEach(track => {
+      sender.addTrack(track, stream)
+    })
+
+    const offer = await sender.createOffer()
+    await sender.setLocalDescription(offer)
+
+    await waitForIceGatheringComplete(sender)
+
+    if (!sender.localDescription) {
+      throw new Error('Offer の生成に失敗しました')
+    }
+
+    setOfferText(
+      JSON.stringify(sender.localDescription)
+    )
+  } catch (error) {
+    console.error('Offer creation failed:', error)
+    alert('Offer の生成に失敗しました')
+  }
+}, [])
+
 const createReceiverAnswer = useCallback(async () => {
   if (!remoteOfferText.trim()) {
     alert('iPhoneで作ったOfferを貼り付けてください')
@@ -682,41 +717,6 @@ const createReceiverAnswer = useCallback(async () => {
     alert('Offerの読み込み、またはAnswerの生成に失敗しました')
   }
 }, [remoteOfferText])
-  
-  try {
-    rtcSenderRef.current?.close()
-
-    const sender = new RTCPeerConnection({
-      iceServers: [
-        {
-          urls: 'stun:stun.cloudflare.com:3478',
-        },
-      ],
-    })
-
-    rtcSenderRef.current = sender
-
-    stream.getTracks().forEach(track => {
-      sender.addTrack(track, stream)
-    })
-
-    const offer = await sender.createOffer()
-    await sender.setLocalDescription(offer)
-
-    await waitForIceGatheringComplete(sender)
-
-    if (!sender.localDescription) {
-      throw new Error('Offer の生成に失敗しました')
-    }
-
-    setOfferText(
-      JSON.stringify(sender.localDescription)
-    )
-  } catch (error) {
-    console.error('Offer creation failed:', error)
-    alert('Offer の生成に失敗しました')
-  }
-}, [])
   
 // ── WebRTC self test ──
 const startWebRTCTest = useCallback(async () => {
