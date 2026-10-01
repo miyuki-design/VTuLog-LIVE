@@ -700,10 +700,29 @@ console.log('Offerをシグナリングサーバーへ送信しました')
 }, [])
 
 const applyReceiverAnswer = useCallback(async () => {
-  if (!remoteAnswerText.trim()) {
-    alert('PCで作ったAnswerを貼り付けてください')
+ let answerTextToUse = remoteAnswerText.trim()
+
+if (!answerTextToUse) {
+  const response = await fetch(
+    `${SIGNALING_BASE_URL}/rooms/${encodeURIComponent(SIGNALING_ROOM_ID)}/answer`,
+    { cache: 'no-store' }
+  )
+
+  if (!response.ok) {
+    alert('シグナリングサーバーにAnswerがまだありません')
     return
   }
+
+  const data = await response.json()
+
+  if (data.status !== 'ok' || !data.description) {
+    alert('Answerを取得できませんでした')
+    return
+  }
+
+  answerTextToUse = JSON.stringify(data.description)
+  setRemoteAnswerText(answerTextToUse)
+}
 
   const sender = rtcSenderRef.current
 
