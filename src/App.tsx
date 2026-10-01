@@ -744,13 +744,19 @@ const createReceiverAnswer = useCallback(async () => {
     rtcReceiverRef.current = receiver
 
     receiver.ontrack = event => {
-      const remoteStream = event.streams[0]
+  const remoteStream = event.streams[0]
 
-      if (rtcPreviewRef.current && remoteStream) {
-        rtcPreviewRef.current.srcObject = remoteStream
-        rtcPreviewRef.current.play().catch(() => {})
-      }
-    }
+  alert(
+    `映像を受信しました\ntrack: ${event.track.kind}\nstream: ${
+      remoteStream ? 'あり' : 'なし'
+    }`
+  )
+
+  if (rtcPreviewRef.current && remoteStream) {
+    rtcPreviewRef.current.srcObject = remoteStream
+    rtcPreviewRef.current.play().catch(() => {})
+  }
+}
 
     const parsedOffer = JSON.parse(remoteOfferText)
 
