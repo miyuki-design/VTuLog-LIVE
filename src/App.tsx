@@ -1081,13 +1081,17 @@ await sender.setRemoteDescription(receiver.localDescription)
 
     liveStreamRef.current = liveStream
 
+    if (rtcRole === 'sender') {
+  void createSenderOffer()
+}
+    
     setLiveTime(0)
     setAppState('live')
 
     timerRef.current = setInterval(() => {
       setLiveTime(t => t + 1)
     }, 1000)
-  }, [])
+  }, [rtcRole, createSenderOffer])
 
     // ── Stop LIVE ──
   const stopLive = useCallback(() => {
