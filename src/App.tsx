@@ -212,6 +212,29 @@ const CH = 1920
 
 const SIGNALING_BASE_URL = 'https://vtulog-signal.miminoz0822.workers.dev'
 const SIGNALING_ROOM_ID = 'mimi-live'
+async function getIceServers(): Promise<RTCIceServer[]> {
+  const response = await fetch(
+    `${SIGNALING_BASE_URL}/turn-credentials`,
+    { cache: 'no-store' }
+  )
+
+  if (!response.ok) {
+    throw new Error(
+      `TURN資格情報の取得に失敗しました: ${response.status}`
+    )
+  }
+
+  const data = await response.json()
+
+  if (
+    data.status !== 'ok' ||
+    !Array.isArray(data.iceServers)
+  ) {
+    throw new Error('TURN資格情報の形式が不正です')
+  }
+
+  return data.iceServers
+}
 
 export default function App() {
   // ── Camera ──
@@ -666,15 +689,11 @@ if (!resetResponse.ok) {
 
 console.log('古いICE candidateをリセットしました')
     
-  const sender = new RTCPeerConnection({
-    
-      iceServers: [
-        {
-          urls: 'stun:stun.cloudflare.com:3478',
-        },
-      ],
-    })
+ const iceServers = await getIceServers()
 
+const sender = new RTCPeerConnection({
+  iceServers,
+})
     rtcSenderRef.current = sender
     sender.onicecandidate = async event => {
   if (!event.candidate) return
@@ -917,13 +936,11 @@ offerCandidates.forEach((match, index) => {
   try {
     rtcReceiverRef.current?.close()
 
-    const receiver = new RTCPeerConnection({
-      iceServers: [
-        {
-          urls: 'stun:stun.cloudflare.com:3478',
-        },
-      ],
-    })
+    const iceServers = await getIceServers()
+
+const receiver = new RTCPeerConnection({
+  iceServers,
+})
 
     rtcReceiverRef.current = receiver
 
