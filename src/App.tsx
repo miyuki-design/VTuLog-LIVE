@@ -1327,7 +1327,7 @@ await sender.setRemoteDescription(receiver.localDescription)
     <div className="h-full flex items-center justify-center" style={{ background: 'var(--color-bg)', fontFamily: 'var(--font-body)' }}>
       {/* hidden camera video source */}
       <video ref={hiddenVideoRef} autoPlay playsInline muted style={{ display: 'none' }} />
-      <video
+      
  <video
   ref={rtcPreviewRef}
   autoPlay
