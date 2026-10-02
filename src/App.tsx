@@ -838,6 +838,10 @@ setRemoteOfferText(offerTextToUse)
 
     rtcReceiverRef.current = receiver
 
+    receiver.oniceconnectionstatechange = () => {
+  console.log('Receiver ICE:', receiver.iceConnectionState)
+}
+    
     receiver.ontrack = event => {
   const remoteStream = event.streams[0]
 
