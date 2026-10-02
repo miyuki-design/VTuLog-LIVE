@@ -928,6 +928,22 @@ offerCandidates.forEach((match, index) => {
   'Answer candidate種類:',
   [...receiver.localDescription.sdp.matchAll(/ typ (\w+)/g)].map(match => match[1])
 )
+
+const answerCandidates = [
+  ...receiver.localDescription.sdp.matchAll(
+    /a=candidate:\S+ \d+ (\S+) \d+ (\S+) (\d+) typ (\w+)/g
+  ),
+]
+
+console.log('Answer candidate詳細:')
+answerCandidates.forEach((match, index) => {
+  console.log(`Answer candidate ${index + 1}:`, {
+    protocol: match[1],
+    address: match[2],
+    port: match[3],
+    type: match[4],
+  })
+})
     
     setAnswerText(
       JSON.stringify(receiver.localDescription)
