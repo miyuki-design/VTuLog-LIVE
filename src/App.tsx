@@ -1328,7 +1328,7 @@ await sender.setRemoteDescription(receiver.localDescription)
       {/* hidden camera video source */}
       <video ref={hiddenVideoRef} autoPlay playsInline muted style={{ display: 'none' }} />
       <video
-  <video
+ <video
   ref={rtcPreviewRef}
   autoPlay
   playsInline
