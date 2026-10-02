@@ -288,7 +288,7 @@ const [offerText, setOfferText] = useState('')
 const [remoteOfferText, setRemoteOfferText] = useState('')
 const [answerText, setAnswerText] = useState('')
 const [remoteAnswerText, setRemoteAnswerText] = useState('')
-  
+const [receiverCandidateDebug, setReceiverCandidateDebug] = useState('未取得')
 const [rtcDebug, setRtcDebug] = useState({
   senderGathering: 'new',
   senderIce: 'new',
@@ -786,6 +786,7 @@ for (let candidatePoll = 0; candidatePoll < 10; candidatePoll++) {
     for (const item of candidateData.candidates ?? []) {
       await sender.addIceCandidate(item.candidate)
       lastReceiverCandidateId = item.id
+      setReceiverCandidateDebug(`Receiver candidate追加成功 / ID: ${item.id}`)
       console.log('Receiver ICE candidateを追加しました:', item.id)
     }
   }
@@ -1416,6 +1417,20 @@ await sender.setRemoteDescription(receiver.localDescription)
     }}
   >
     {videoTrackInfo}
+  </div>
+)}
+
+{rtcRole === 'sender' && (
+  <div
+    style={{
+      fontSize: '10px',
+      color: 'var(--color-cyan)',
+      padding: '4px 12px',
+      textAlign: 'center',
+      flexShrink: 0,
+    }}
+  >
+    ICE: {receiverCandidateDebug}
   </div>
 )}
         
