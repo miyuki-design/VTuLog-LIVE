@@ -619,19 +619,31 @@ const stopWebRTCTest = useCallback(() => {
 }, [])
 
 const waitForIceGatheringComplete = (
-  pc: RTCPeerConnection
+  pc: RTCPeerConnection,
+  timeoutMs = 3000
 ): Promise<void> => {
   if (pc.iceGatheringState === 'complete') {
     return Promise.resolve()
   }
 
   return new Promise(resolve => {
+    const cleanup = () => {
+      pc.removeEventListener('icegatheringstatechange', checkState)
+      clearTimeout(timeoutId)
+    }
+
     const checkState = () => {
       if (pc.iceGatheringState === 'complete') {
-        pc.removeEventListener('icegatheringstatechange', checkState)
+        cleanup()
         resolve()
       }
     }
+
+    const timeoutId = setTimeout(() => {
+      cleanup()
+      console.log('ICE gathering timeout: 現在のcandidateで続行します')
+      resolve()
+    }, timeoutMs)
 
     pc.addEventListener('icegatheringstatechange', checkState)
   })
@@ -864,7 +876,7 @@ setRemoteOfferText(offerTextToUse)
     const answer = await receiver.createAnswer()
     await receiver.setLocalDescription(answer)
 
-    // await waitForIceGatheringComplete(receiver)
+    await waitForIceGatheringComplete(receiver)
 
     if (!receiver.localDescription) {
       throw new Error('Answer の生成に失敗しました')
