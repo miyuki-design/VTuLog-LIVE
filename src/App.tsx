@@ -620,7 +620,7 @@ const stopWebRTCTest = useCallback(() => {
 
 const waitForIceGatheringComplete = (
   pc: RTCPeerConnection,
-  timeoutMs = 3000
+  timeoutMs = 10000
 ): Promise<void> => {
   if (pc.iceGatheringState === 'complete') {
     return Promise.resolve()
