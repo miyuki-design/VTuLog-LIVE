@@ -1335,10 +1335,10 @@ await sender.setRemoteDescription(receiver.localDescription)
   style={{
     position: 'fixed',
     inset: 0,
-    width: rtcRole === 'receiver' ? '100vw' : '1px',
-    height: rtcRole === 'receiver' ? '100vh' : '1px',
+    width: rtcRole === 'receiver' && appState === 'live' ? '100vw' : '1px',
+    height: rtcRole === 'receiver' && appState === 'live' ? '100vh' : '1px',
     objectFit: 'contain',
-    zIndex: rtcRole === 'receiver' ? 9999 : -1,
+    zIndex: rtcRole === 'receiver' && appState === 'live' ? 9999 : -1,
     background: '#000',
   }}
 />
