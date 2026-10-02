@@ -860,7 +860,7 @@ setRemoteOfferText(offerTextToUse)
     const answer = await receiver.createAnswer()
     await receiver.setLocalDescription(answer)
 
-    await waitForIceGatheringComplete(receiver)
+    // await waitForIceGatheringComplete(receiver)
 
     if (!receiver.localDescription) {
       throw new Error('Answer の生成に失敗しました')
