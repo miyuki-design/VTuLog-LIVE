@@ -696,6 +696,11 @@ const createSenderOffer = useCallback(async () => {
       JSON.stringify(sender.localDescription)
     )
 
+    console.log(
+  'Offer candidate数:',
+  (sender.localDescription.sdp.match(/a=candidate:/g) ?? []).length
+)
+    
     const response = await fetch(
   `${SIGNALING_BASE_URL}/rooms/${encodeURIComponent(SIGNALING_ROOM_ID)}/offer`,
   {
