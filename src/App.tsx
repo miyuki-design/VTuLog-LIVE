@@ -772,36 +772,37 @@ for (let i = 0; i < 60; i++) {
   if (data.status === 'ok' && data.description) {
     await sender.setRemoteDescription(data.description)
 
-/*
-    let lastReceiverCandidateId = 0
+// 一時的にTrickle ICEのreceiver candidate追加を停止
+if (false) {
+  let lastReceiverCandidateId = 0
 
-for (let candidatePoll = 0; candidatePoll < 10; candidatePoll++) {
-  const candidateResponse = await fetch(
-    `${SIGNALING_BASE_URL}/rooms/${encodeURIComponent(SIGNALING_ROOM_ID)}/candidates?role=receiver&after=${lastReceiverCandidateId}`,
-    { cache: 'no-store' }
-  )
+  for (let candidatePoll = 0; candidatePoll < 10; candidatePoll++) {
+    const candidateResponse = await fetch(
+      `${SIGNALING_BASE_URL}/rooms/${encodeURIComponent(SIGNALING_ROOM_ID)}/candidates?role=receiver&after=${lastReceiverCandidateId}`,
+      { cache: 'no-store' }
+    )
 
-  if (candidateResponse.ok) {
-    const candidateData = await candidateResponse.json()
+    if (candidateResponse.ok) {
+      const candidateData = await candidateResponse.json()
 
-    for (const item of candidateData.candidates ?? []) {
-      await sender.addIceCandidate(item.candidate)
-      lastReceiverCandidateId = item.id
-      setReceiverCandidateDebug(`Receiver candidate追加成功 / ID: ${item.id}`)
-      console.log('Receiver ICE candidateを追加しました:', item.id)
+      for (const item of candidateData.candidates ?? []) {
+        await sender.addIceCandidate(item.candidate)
+        lastReceiverCandidateId = item.id
+        setReceiverCandidateDebug(`Receiver candidate追加成功 / ID: ${item.id}`)
+        console.log('Receiver ICE candidateを追加しました:', item.id)
+      }
     }
-  }
 
-  if (
-    sender.iceConnectionState === 'connected' ||
-    sender.iceConnectionState === 'completed'
-  ) {
-    break
-  }
+    if (
+      sender.iceConnectionState === 'connected' ||
+      sender.iceConnectionState === 'completed'
+    ) {
+      break
+    }
 
-  await new Promise(resolve => setTimeout(resolve, 500))
+    await new Promise(resolve => setTimeout(resolve, 500))
+  }
 }
-/*
     
     setRemoteAnswerText(JSON.stringify(data.description))
     setRtcStatus('connected')
