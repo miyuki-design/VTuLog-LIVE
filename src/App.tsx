@@ -894,6 +894,11 @@ console.log(
   'Answer candidate数:',
   (receiver.localDescription.sdp.match(/a=candidate:/g) ?? []).length
 )
+
+    console.log(
+  'Answer candidate種類:',
+  [...receiver.localDescription.sdp.matchAll(/ typ (\w+)/g)].map(match => match[1])
+)
     
     setAnswerText(
       JSON.stringify(receiver.localDescription)
