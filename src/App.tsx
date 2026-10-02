@@ -840,7 +840,11 @@ setRemoteOfferText(offerTextToUse)
   'Offer candidate数:',
   (data.description.sdp.match(/a=candidate:/g) ?? []).length
 )
-
+console.log(
+  'Offer candidate種類:',
+  [...data.description.sdp.matchAll(/ typ (\w+)/g)].map(match => match[1])
+)
+  
   try {
     rtcReceiverRef.current?.close()
 
