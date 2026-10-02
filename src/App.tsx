@@ -665,6 +665,19 @@ const createSenderOffer = useCallback(async () => {
   setOfferText('')
   setRtcStatus('idle')
 
+const resetResponse = await fetch(
+  `${SIGNALING_BASE_URL}/rooms/${encodeURIComponent(SIGNALING_ROOM_ID)}/candidates/reset`,
+  {
+    method: 'POST',
+  }
+)
+
+if (!resetResponse.ok) {
+  throw new Error(`ICE candidateのリセットに失敗しました: ${resetResponse.status}`)
+}
+
+console.log('古いICE candidateをリセットしました')
+    
   const sender = new RTCPeerConnection({
     
       iceServers: [
