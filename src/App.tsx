@@ -675,7 +675,35 @@ const createSenderOffer = useCallback(async () => {
     })
 
     rtcSenderRef.current = sender
+    sender.onicecandidate = async event => {
+  if (!event.candidate) return
 
+  try {
+    const response = await fetch(
+      `${SIGNALING_BASE_URL}/rooms/${encodeURIComponent(SIGNALING_ROOM_ID)}/candidates`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          role: 'sender',
+          candidate: event.candidate.toJSON(),
+        }),
+      }
+    )
+
+    if (!response.ok) {
+      console.error('Sender ICE candidate送信失敗:', response.status)
+      return
+    }
+
+    console.log('Sender ICE candidate送信成功')
+  } catch (error) {
+    console.error('Sender ICE candidate送信エラー:', error)
+  }
+}
+    
     stream.getVideoTracks().forEach(track => {
   sender.addTransceiver(track, {
     direction: 'sendonly',
