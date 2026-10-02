@@ -858,8 +858,30 @@ console.log(
 
     rtcReceiverRef.current = receiver
 
-    receiver.oniceconnectionstatechange = () => {
+    receiver.oniceconnectionstatechange = async () => {
   console.log('Receiver ICE:', receiver.iceConnectionState)
+
+  if (
+    receiver.iceConnectionState === 'connected' ||
+    receiver.iceConnectionState === 'completed' ||
+    receiver.iceConnectionState === 'disconnected' ||
+    receiver.iceConnectionState === 'failed'
+  ) {
+    const stats = await receiver.getStats()
+
+    stats.forEach(report => {
+      if (report.type === 'candidate-pair') {
+        console.log('Candidate pair:', {
+          state: report.state,
+          nominated: report.nominated,
+          selected: report.selected,
+          localCandidateId: report.localCandidateId,
+          remoteCandidateId: report.remoteCandidateId,
+          bytesReceived: report.bytesReceived,
+        })
+      }
+    })
+  }
 }
     
     receiver.ontrack = event => {
