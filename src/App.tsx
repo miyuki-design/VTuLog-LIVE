@@ -619,36 +619,24 @@ const stopWebRTCTest = useCallback(() => {
 }, [])
 
 const waitForIceGatheringComplete = (
-  pc: RTCPeerConnection,
-  timeoutMs = 10000
+  pc: RTCPeerConnection
 ): Promise<void> => {
   if (pc.iceGatheringState === 'complete') {
     return Promise.resolve()
   }
 
   return new Promise(resolve => {
-    const cleanup = () => {
-      pc.removeEventListener('icegatheringstatechange', checkState)
-      clearTimeout(timeoutId)
-    }
-
     const checkState = () => {
       if (pc.iceGatheringState === 'complete') {
-        cleanup()
+        pc.removeEventListener('icegatheringstatechange', checkState)
         resolve()
       }
     }
 
-    const timeoutId = setTimeout(() => {
-      cleanup()
-      console.log('ICE gathering timeout: 現在のcandidateで続行します')
-      resolve()
-    }, timeoutMs)
-
     pc.addEventListener('icegatheringstatechange', checkState)
   })
 }
-
+  
 const createSenderOffer = useCallback(async () => {
   const stream = liveStreamRef.current
 
