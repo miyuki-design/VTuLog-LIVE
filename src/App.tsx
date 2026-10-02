@@ -1013,17 +1013,20 @@ offerCandidates.forEach((match, index) => {
     
     await receiver.setRemoteDescription(parsedOffer)
 
-    const candidateResponse = await fetch(
-  `${SIGNALING_BASE_URL}/rooms/${encodeURIComponent(SIGNALING_ROOM_ID)}/candidates?role=sender&after=0`,
-  { cache: 'no-store' }
-)
+    // 一時的にTrickle ICEのsender candidate追加を停止
+if (false) {
+  const candidateResponse = await fetch(
+    `${SIGNALING_BASE_URL}/rooms/${encodeURIComponent(SIGNALING_ROOM_ID)}/candidates?role=sender&after=0`,
+    { cache: 'no-store' }
+  )
 
-if (candidateResponse.ok) {
-  const candidateData = await candidateResponse.json()
+  if (candidateResponse.ok) {
+    const candidateData = await candidateResponse.json()
 
-  for (const item of candidateData.candidates ?? []) {
-    await receiver.addIceCandidate(item.candidate)
-    console.log('Sender ICE candidateを追加しました:', item.id)
+    for (const item of candidateData.candidates ?? []) {
+      await receiver.addIceCandidate(item.candidate)
+      console.log('Sender ICE candidateを追加しました:', item.id)
+    }
   }
 }
 
