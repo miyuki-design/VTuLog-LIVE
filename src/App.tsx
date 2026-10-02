@@ -695,11 +695,6 @@ const createSenderOffer = useCallback(async () => {
     setOfferText(
       JSON.stringify(sender.localDescription)
     )
-
-    console.log(
-  'Offer candidate数:',
-  (sender.localDescription.sdp.match(/a=candidate:/g) ?? []).length
-)
     
     const response = await fetch(
   `${SIGNALING_BASE_URL}/rooms/${encodeURIComponent(SIGNALING_ROOM_ID)}/offer`,
@@ -841,6 +836,10 @@ if (data.status !== 'ok' || !data.description) {
 
 const offerTextToUse = JSON.stringify(data.description)
 setRemoteOfferText(offerTextToUse)
+  console.log(
+  'Offer candidate数:',
+  (data.description.sdp.match(/a=candidate:/g) ?? []).length
+)
 
   try {
     rtcReceiverRef.current?.close()
