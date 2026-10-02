@@ -724,7 +724,7 @@ const sender = new RTCPeerConnection({
   }
 }
     
-    stream.getVideoTracks().forEach(track => {
+    stream.getTracks().forEach(track => {
   sender.addTransceiver(track, {
     direction: 'sendonly',
     streams: [stream],
@@ -1328,10 +1328,10 @@ await sender.setRemoteDescription(receiver.localDescription)
       {/* hidden camera video source */}
       <video ref={hiddenVideoRef} autoPlay playsInline muted style={{ display: 'none' }} />
       <video
+  <video
   ref={rtcPreviewRef}
   autoPlay
   playsInline
-  muted
   style={{
     position: 'absolute',
     right: '12px',
