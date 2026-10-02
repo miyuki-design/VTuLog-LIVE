@@ -772,6 +772,7 @@ for (let i = 0; i < 60; i++) {
   if (data.status === 'ok' && data.description) {
     await sender.setRemoteDescription(data.description)
 
+/*
     let lastReceiverCandidateId = 0
 
 for (let candidatePoll = 0; candidatePoll < 10; candidatePoll++) {
@@ -800,6 +801,7 @@ for (let candidatePoll = 0; candidatePoll < 10; candidatePoll++) {
 
   await new Promise(resolve => setTimeout(resolve, 500))
 }
+/*
     
     setRemoteAnswerText(JSON.stringify(data.description))
     setRtcStatus('connected')
