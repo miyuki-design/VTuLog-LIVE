@@ -836,14 +836,21 @@ if (data.status !== 'ok' || !data.description) {
 
 const offerTextToUse = JSON.stringify(data.description)
 setRemoteOfferText(offerTextToUse)
-  console.log(
-  'Offer candidate数:',
-  (data.description.sdp.match(/a=candidate:/g) ?? []).length
-)
-console.log(
-  'Offer candidate種類:',
-  [...data.description.sdp.matchAll(/ typ (\w+)/g)].map(match => match[1])
-)
+ const offerCandidates = [
+  ...data.description.sdp.matchAll(
+    /a=candidate:\S+ \d+ (\S+) \d+ (\S+) (\d+) typ (\w+)/g
+  ),
+]
+
+console.log('Offer candidate詳細:')
+offerCandidates.forEach((match, index) => {
+  console.log(`Offer candidate ${index + 1}:`, {
+    protocol: match[1],
+    address: match[2],
+    port: match[3],
+    type: match[4],
+  })
+})
   
   try {
     rtcReceiverRef.current?.close()
