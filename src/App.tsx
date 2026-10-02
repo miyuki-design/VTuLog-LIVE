@@ -882,6 +882,11 @@ setRemoteOfferText(offerTextToUse)
       throw new Error('Answer の生成に失敗しました')
     }
 
+    console.log(
+  'Answer candidate数:',
+  (receiver.localDescription.sdp.match(/a=candidate:/g) ?? []).length
+)
+    
     setAnswerText(
       JSON.stringify(receiver.localDescription)
     )
