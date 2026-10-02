@@ -1280,7 +1280,7 @@ await sender.setRemoteDescription(receiver.localDescription)
 
     liveStreamRef.current = liveStream
 
-    if (false && rtcRole === 'sender') {
+   if (rtcRole === 'sender') {
   void createSenderOffer()
 }
     
