@@ -1328,20 +1328,20 @@ await sender.setRemoteDescription(receiver.localDescription)
       {/* hidden camera video source */}
       <video ref={hiddenVideoRef} autoPlay playsInline muted style={{ display: 'none' }} />
       
-  <video
-    ref={rtcPreviewRef}
-    autoPlay
-    playsInline
-    style={{
-      position: 'fixed',
-      inset: 0,
-      width: '100vw',
-      height: '100vh',
-      objectFit: 'contain',
-      zIndex: 9999,
-      background: '#000',
-    }}
-  />
+ <video
+  ref={rtcPreviewRef}
+  autoPlay
+  playsInline
+  style={{
+    position: 'fixed',
+    inset: 0,
+    width: rtcRole === 'receiver' ? '100vw' : '1px',
+    height: rtcRole === 'receiver' ? '100vh' : '1px',
+    objectFit: 'contain',
+    zIndex: rtcRole === 'receiver' ? 9999 : -1,
+    background: '#000',
+  }}
+/>
       
       {/* hidden file inputs */}
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
