@@ -658,13 +658,20 @@ const fetchYouTubeLive = useCallback(async () => {
 
   const data = await response.json()
 
-  console.log('YouTube Broadcast診断:', data)
+  if (!response.ok) {
+    alert(`YouTube APIエラー: ${data.error?.message ?? response.status}`)
+    return
+  }
 
-  alert(
-    `HTTP: ${response.status}\n` +
-    `取得件数: ${data.items?.length ?? 0}\n` +
-    `APIエラー: ${data.error?.message ?? 'なし'}`
-  )
+  const summary = (data.items ?? [])
+    .map((item: any, index: number) =>
+      `${index + 1}. ${item.snippet?.title ?? 'タイトルなし'}\n` +
+      `状態: ${item.status?.lifeCycleStatus ?? '不明'}\n` +
+      `Chat: ${item.snippet?.liveChatId ?? 'なし'}`
+    )
+    .join('\n\n')
+
+  alert(summary || '配信がありません')
 }, [])
 
   // ── Microphone ON / OFF ──
