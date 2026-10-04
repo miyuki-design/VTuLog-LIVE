@@ -299,6 +299,12 @@ export default function App() {
   const rtcReceiverRef = useRef<RTCPeerConnection | null>(null)
   const rtcPreviewRef = useRef<HTMLVideoElement>(null)
 
+  // ── Cloudflare Stream / WHIP ──
+const whipPeerRef = useRef<RTCPeerConnection | null>(null)
+const [whipUrl, setWhipUrl] = useState(() =>
+  localStorage.getItem('vtulog-whip-url') ?? ''
+)
+
   const [rtcStatus, setRtcStatus] = useState<
   'idle' | 'connecting' | 'connected' | 'failed'
 >('idle')
