@@ -708,6 +708,19 @@ const fetchYouTubeLive = useCallback(async () => {
 
 setYoutubeComments(comments)
 }, [])
+
+  // ── YouTube コメント自動更新 ──
+useEffect(() => {
+  if (appState !== 'live') return
+
+  void fetchYouTubeLive()
+
+  const interval = setInterval(() => {
+    void fetchYouTubeLive()
+  }, 10000)
+
+  return () => clearInterval(interval)
+}, [appState, fetchYouTubeLive])
   
   // ── Microphone ON / OFF ──
 const toggleMic = useCallback(() => {
