@@ -638,7 +638,7 @@ const connectYouTube = useCallback(() => {
     `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`
 }, [])
 
- // ── YouTube チャンネル確認 ──
+// ── YouTube 配信診断 ──
 const fetchYouTubeLive = useCallback(async () => {
   const accessToken = localStorage.getItem('youtube-access-token')
 
@@ -648,7 +648,7 @@ const fetchYouTubeLive = useCallback(async () => {
   }
 
   const response = await fetch(
-    'https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true',
+    'https://www.googleapis.com/youtube/v3/liveBroadcasts?part=id,snippet,status&broadcastStatus=all&broadcastType=all&mine=true&maxResults=50',
     {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -657,14 +657,13 @@ const fetchYouTubeLive = useCallback(async () => {
   )
 
   const data = await response.json()
-  const channel = data.items?.[0]
 
-  console.log('YouTube Channel:', data)
+  console.log('YouTube Broadcast診断:', data)
 
   alert(
-    channel
-      ? `認証中のYouTubeチャンネル：${channel.snippet.title}\nチャンネルID：${channel.id}`
-      : 'YouTubeチャンネルを取得できませんでした'
+    `HTTP: ${response.status}\n` +
+    `取得件数: ${data.items?.length ?? 0}\n` +
+    `APIエラー: ${data.error?.message ?? 'なし'}`
   )
 }, [])
 
