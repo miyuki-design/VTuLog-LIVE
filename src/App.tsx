@@ -1926,6 +1926,25 @@ useEffect(() => {
   </div>
 )}
 
+{appState === 'idle' && (
+  <button
+    onClick={connectYouTube}
+    style={{
+      marginTop: '12px',
+      padding: '10px 18px',
+      borderRadius: '999px',
+      border: '1px solid rgba(255,255,255,0.2)',
+      background: 'rgba(255,255,255,0.08)',
+      color: '#fff',
+      fontSize: '13px',
+      fontWeight: 600,
+      cursor: 'pointer',
+    }}
+  >
+    ▶ YouTubeに接続
+  </button>
+)}
+          
 {appState === 'live' && (
   <div className="flex flex-col items-center gap-3 animate-fade-in">
 
