@@ -615,6 +615,21 @@ const connectYouTube = useCallback(() => {
     `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`
 }, [])
 
+  // ── YouTube OAuth ──
+const connectYouTube = useCallback(() => {
+  const params = new URLSearchParams({
+    client_id: GOOGLE_CLIENT_ID,
+    redirect_uri: GOOGLE_REDIRECT_URI,
+    response_type: 'token',
+    scope: YOUTUBE_SCOPE,
+    include_granted_scopes: 'true',
+    prompt: 'consent',
+  })
+
+  window.location.href =
+    `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`
+}, [])
+
   // ── Microphone ON / OFF ──
 const toggleMic = useCallback(() => {
   const audioTracks = audioStreamRef.current?.getAudioTracks() ?? []
