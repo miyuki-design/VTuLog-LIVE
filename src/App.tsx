@@ -1536,7 +1536,7 @@ if (whipUrl.trim()) {
   }, [rtcRole, createSenderOffer, whipUrl, startWhipBroadcast])
 
     // ── Stop LIVE ──
- const stopLive = useCallback(() => {
+ const stopLive = useCallback(async () => {
   // 相手端末へLIVE終了を通知
   if (rtcRole) {
     void fetch(
