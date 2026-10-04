@@ -1337,6 +1337,26 @@ await sender.setRemoteDescription(receiver.localDescription)
 />
 
       {rtcRole === 'receiver' && appState === 'live' && (
+  <div
+    style={{
+      position: 'fixed',
+      top: '16px',
+      left: '16px',
+      zIndex: 10000,
+      padding: '8px 12px',
+      borderRadius: '999px',
+      background: 'rgba(0,0,0,0.65)',
+      color: '#fff',
+      fontSize: '12px',
+      fontWeight: 600,
+      backdropFilter: 'blur(8px)',
+    }}
+  >
+    {rtcStatus === 'connected' ? '● 接続済み' : '● 接続中…'}
+  </div>
+)}
+      
+      {rtcRole === 'receiver' && appState === 'live' && (
   <button
     onClick={stopLive}
     style={{
