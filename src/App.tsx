@@ -1919,41 +1919,6 @@ await sender.setRemoteDescription(receiver.localDescription)
   </div>
 )}
     
-    <button
-  onClick={rtcStatus === 'idle' ? startWebRTCTest : stopWebRTCTest}
-  className="glass rounded-xl px-4 py-2"
-  style={{
-    fontFamily: 'var(--font-display)',
-    fontSize: '11px',
-    color:
-      rtcStatus === 'connected'
-        ? 'var(--color-cyan)'
-        : 'var(--color-muted)',
-  }}
->
-  {rtcStatus === 'idle' && 'WebRTC TEST'}
-  {rtcStatus === 'connecting' && 'WebRTC 接続中…'}
-  {rtcStatus === 'connected' && '✓ WebRTC 接続成功'}
-  {rtcStatus === 'failed' && 'WebRTC 接続失敗'}
-</button>
-
-{rtcStatus !== 'idle' && (
-  <div
-    className="glass rounded-xl px-3 py-2"
-    style={{
-      fontFamily: 'monospace',
-      fontSize: '10px',
-      color: 'var(--color-cyan)',
-      lineHeight: 1.5,
-    }}
-  >
-    <div>sender gather: {rtcDebug.senderGathering}</div>
-    <div>sender ICE: {rtcDebug.senderIce}</div>
-    <div>receiver gather: {rtcDebug.receiverGathering}</div>
-    <div>receiver ICE: {rtcDebug.receiverIce}</div>
-  </div>
-)}
-    
     <p
       style={{
         fontSize: '11px',
