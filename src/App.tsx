@@ -999,21 +999,14 @@ const receiver = new RTCPeerConnection({
   }
 }
     
-    receiver.ontrack = event => {
+   receiver.ontrack = event => {
   const remoteStream = event.streams[0]
-
-  alert(
-    `映像を受信しました\ntrack: ${event.track.kind}\nstream: ${
-      remoteStream ? 'あり' : 'なし'
-    }`
-  )
 
   if (rtcPreviewRef.current && remoteStream) {
     rtcPreviewRef.current.srcObject = remoteStream
     rtcPreviewRef.current.play().catch(() => {})
   }
 }
-
     const parsedOffer = JSON.parse(offerTextToUse)
     
     await receiver.setRemoteDescription(parsedOffer)
