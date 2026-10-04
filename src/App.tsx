@@ -852,6 +852,13 @@ const startWhipBroadcast = useCallback(async () => {
       throw new Error(`WHIP接続失敗: ${response.status}`)
     }
 
+    const sessionUrl = response.headers.get('Location')
+
+if (sessionUrl) {
+  whipSessionUrlRef.current = new URL(sessionUrl, url).toString()
+  console.log('WHIP session URLを保存しました')
+}
+
     const answer = await response.text()
 
     await peer.setRemoteDescription({
