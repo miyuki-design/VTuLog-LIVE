@@ -638,7 +638,7 @@ const connectYouTube = useCallback(() => {
     `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`
 }, [])
 
-  // ── YouTube LIVE取得 ──
+ // ── YouTube チャンネル確認 ──
 const fetchYouTubeLive = useCallback(async () => {
   const accessToken = localStorage.getItem('youtube-access-token')
 
@@ -648,7 +648,7 @@ const fetchYouTubeLive = useCallback(async () => {
   }
 
   const response = await fetch(
-    'https://www.googleapis.com/youtube/v3/liveBroadcasts?part=id,snippet&broadcastStatus=all&broadcastType=all&mine=true',
+    'https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true',
     {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -657,9 +657,15 @@ const fetchYouTubeLive = useCallback(async () => {
   )
 
   const data = await response.json()
+  const channel = data.items?.[0]
 
-  console.log('YouTube LIVE:', data)
-  alert(`YouTube API接続成功 / 配信数: ${data.items?.length ?? 0}`)
+  console.log('YouTube Channel:', data)
+
+  alert(
+    channel
+      ? `認証中のYouTubeチャンネル：${channel.snippet.title}\nチャンネルID：${channel.id}`
+      : 'YouTubeチャンネルを取得できませんでした'
+  )
 }, [])
 
   // ── Microphone ON / OFF ──
