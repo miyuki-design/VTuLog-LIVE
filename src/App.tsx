@@ -1242,9 +1242,23 @@ await sender.setRemoteDescription(receiver.localDescription)
     const canvas = canvasRef.current
     if (!canvas) return
 
-    setMicError(null)
+   setMicError(null)
 
-    let audioStream: MediaStream | null = null
+// 前回のLIVE終了通知をリセット
+await fetch(
+  `${SIGNALING_BASE_URL}/rooms/${encodeURIComponent(SIGNALING_ROOM_ID)}/end`,
+  {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      action: 'reset',
+    }),
+  }
+)
+
+let audioStream: MediaStream | null = null
 
     try {
       audioStream = await navigator.mediaDevices.getUserMedia({
@@ -1297,23 +1311,73 @@ await sender.setRemoteDescription(receiver.localDescription)
   }, [rtcRole, createSenderOffer])
 
     // ── Stop LIVE ──
-  const stopLive = useCallback(() => {
-    stopWebRTCTest()
-    if (timerRef.current) {
-      clearInterval(timerRef.current)
-      timerRef.current = null
+ const stopLive = useCallback(() => {
+  // 相手端末へLIVE終了を通知
+  if (rtcRole) {
+    void fetch(
+      `${SIGNALING_BASE_URL}/rooms/${encodeURIComponent(SIGNALING_ROOM_ID)}/end`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          role: rtcRole,
+        }),
+      }
+    ).catch(error => {
+      console.error('LIVE終了通知に失敗しました:', error)
+    })
+  }
+
+  stopWebRTCTest()
+
+  if (timerRef.current) {
+    clearInterval(timerRef.current)
+    timerRef.current = null
+  }
+
+  audioStreamRef.current?.getTracks().forEach(track => track.stop())
+  audioStreamRef.current = null
+
+  liveStreamRef.current?.getTracks().forEach(track => track.stop())
+  liveStreamRef.current = null
+
+  setAppState('idle')
+  setLiveTime(0)
+}, [rtcRole, stopWebRTCTest])
+
+// ── Watch remote LIVE end ──
+useEffect(() => {
+  if (appState !== 'live' || !rtcRole) return
+
+  const interval = setInterval(async () => {
+    try {
+      const response = await fetch(
+        `${SIGNALING_BASE_URL}/rooms/${encodeURIComponent(SIGNALING_ROOM_ID)}/end`,
+        { cache: 'no-store' }
+      )
+
+      if (!response.ok) return
+
+      const data = await response.json()
+
+      if (
+        data.status === 'ok' &&
+        data.endedBy &&
+        data.endedBy !== rtcRole
+      ) {
+        console.log('相手端末のLIVE終了を検知:', data.endedBy)
+        stopLive()
+      }
+    } catch (error) {
+      console.error('LIVE終了確認に失敗しました:', error)
     }
+  }, 1000)
 
-    audioStreamRef.current?.getTracks().forEach(track => track.stop())
-    audioStreamRef.current = null
-
-    liveStreamRef.current?.getTracks().forEach(track => track.stop())
-    liveStreamRef.current = null
-
-    setAppState('idle')
-    setLiveTime(0)
-  }, [stopWebRTCTest])
-
+  return () => clearInterval(interval)
+}, [appState, rtcRole, stopLive])
+  
   // ── Cleanup ──
   useEffect(() => () => {
   if (timerRef.current) clearInterval(timerRef.current)
