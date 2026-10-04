@@ -638,7 +638,7 @@ const connectYouTube = useCallback(() => {
     `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`
 }, [])
 
-// ── YouTube 配信診断 ──
+// ── YouTube LIVE + コメント取得 ──
 const fetchYouTubeLive = useCallback(async () => {
   const accessToken = localStorage.getItem('youtube-access-token')
 
@@ -647,7 +647,8 @@ const fetchYouTubeLive = useCallback(async () => {
     return
   }
 
-  const response = await fetch(
+  // 配信一覧を取得
+  const broadcastResponse = await fetch(
     'https://www.googleapis.com/youtube/v3/liveBroadcasts?part=id,snippet,status&broadcastStatus=all&broadcastType=all&maxResults=50',
     {
       headers: {
@@ -656,24 +657,59 @@ const fetchYouTubeLive = useCallback(async () => {
     }
   )
 
-  const data = await response.json()
+  const broadcastData = await broadcastResponse.json()
 
-  if (!response.ok) {
-    alert(`YouTube APIエラー: ${data.error?.message ?? response.status}`)
+  if (!broadcastResponse.ok) {
+    alert(`YouTube APIエラー: ${broadcastData.error?.message ?? broadcastResponse.status}`)
     return
   }
 
-  const summary = (data.items ?? [])
-    .map((item: any, index: number) =>
-      `${index + 1}. ${item.snippet?.title ?? 'タイトルなし'}\n` +
-      `状態: ${item.status?.lifeCycleStatus ?? '不明'}\n` +
-      `Chat: ${item.snippet?.liveChatId ?? 'なし'}`
+  // live状態の配信を探す
+  const liveBroadcast = (broadcastData.items ?? []).find(
+    (item: any) =>
+      item.status?.lifeCycleStatus === 'live' &&
+      item.snippet?.liveChatId
+  )
+
+  if (!liveBroadcast) {
+    alert('現在LIVE中の配信が見つかりません')
+    return
+  }
+
+  const liveChatId = liveBroadcast.snippet.liveChatId
+
+  // コメント取得
+  const chatResponse = await fetch(
+    `https://www.googleapis.com/youtube/v3/liveChat/messages?liveChatId=${encodeURIComponent(liveChatId)}&part=snippet,authorDetails`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  )
+
+  const chatData = await chatResponse.json()
+
+  if (!chatResponse.ok) {
+    alert(`コメント取得エラー: ${chatData.error?.message ?? chatResponse.status}`)
+    return
+  }
+
+  const comments = (chatData.items ?? [])
+    .filter((item: any) => item.snippet?.displayMessage)
+    .map(
+      (item: any) =>
+        `${item.authorDetails?.displayName ?? '名無し'}：${item.snippet.displayMessage}`
     )
-    .join('\n\n')
+    .join('\n')
 
-  alert(summary || '配信がありません')
+  alert(
+    comments
+      ? `💬 YouTube LIVEコメント\n\n${comments}`
+      : 'コメントはまだありません'
+  )
 }, [])
-
+  
   // ── Microphone ON / OFF ──
 const toggleMic = useCallback(() => {
   const audioTracks = audioStreamRef.current?.getAudioTracks() ?? []
