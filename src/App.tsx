@@ -330,6 +330,7 @@ const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [micError, setMicError] = useState<string | null>(null)
   const [videoTrackInfo, setVideoTrackInfo] = useState('')
+  const [micEnabled, setMicEnabled] = useState(true)
 
   const isCapturing = true
   const isLive = appState === 'live'
@@ -594,6 +595,21 @@ const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
     setVtScale(ns)
     saveAvatarTransform()
   }, [saveAvatarTransform])
+
+  // ── Microphone ON / OFF ──
+const toggleMic = useCallback(() => {
+  const audioTracks = audioStreamRef.current?.getAudioTracks() ?? []
+
+  if (audioTracks.length === 0) return
+
+  const nextEnabled = !micEnabled
+
+  audioTracks.forEach(track => {
+    track.enabled = nextEnabled
+  })
+
+  setMicEnabled(nextEnabled)
+}, [micEnabled])
 
   // ── Live2D folder upload ──
   const handleLive2DUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1448,8 +1464,32 @@ useEffect(() => {
     LIVE終了
   </button>
 )}
-      
-      {/* hidden file inputs */}
+
+{rtcRole === 'sender' && appState === 'live' && (
+  <button
+    onClick={toggleMic}
+    style={{
+      position: 'fixed',
+      bottom: '24px',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      zIndex: 10000,
+      padding: '12px 18px',
+      borderRadius: '999px',
+      border: '1px solid rgba(255,255,255,0.25)',
+      background: 'rgba(0,0,0,0.65)',
+      color: '#fff',
+      fontSize: '14px',
+      fontWeight: 600,
+      cursor: 'pointer',
+      backdropFilter: 'blur(8px)',
+    }}
+  >
+    {micEnabled ? '🎙️ マイクON' : '🔇 マイクOFF'}
+  </button>
+)}
+
+{/* hidden file inputs */}
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
       {/* webkitdirectory lets user pick entire model folder */}
       <input
