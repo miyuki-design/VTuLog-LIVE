@@ -2040,6 +2040,56 @@ useEffect(() => {
 )}
 
 {appState === 'idle' && (
+  <div
+    style={{
+      width: '100%',
+      marginTop: '12px',
+      padding: '12px',
+      borderRadius: '14px',
+      background: 'rgba(255,255,255,0.06)',
+      border: '1px solid rgba(255,255,255,0.15)',
+    }}
+  >
+    <input
+      type="password"
+      value={whipUrl}
+      onChange={e => setWhipUrl(e.target.value)}
+      placeholder="Cloudflare WHIP URL"
+      style={{
+        width: '100%',
+        padding: '10px 12px',
+        borderRadius: '10px',
+        border: '1px solid rgba(255,255,255,0.2)',
+        background: 'rgba(0,0,0,0.25)',
+        color: '#fff',
+        fontSize: '12px',
+      }}
+    />
+
+    <button
+      onClick={() => {
+        localStorage.setItem('vtulog-whip-url', whipUrl.trim())
+        alert('WHIP URLをこの端末に保存しました')
+      }}
+      style={{
+        width: '100%',
+        marginTop: '8px',
+        padding: '10px',
+        borderRadius: '999px',
+        border: '1px solid rgba(0,229,255,0.3)',
+        background: 'rgba(0,229,255,0.08)',
+        color: 'var(--color-cyan)',
+        fontSize: '13px',
+        fontWeight: 600,
+        cursor: 'pointer',
+      }}
+    >
+      ☁️ WHIP URLを保存
+    </button>
+  </div>
+)}
+          
+{appState === 'idle' && (
   <button
     onClick={connectYouTube}
     style={{
