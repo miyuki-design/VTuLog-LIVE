@@ -807,6 +807,71 @@ const waitForIceGatheringComplete = (
     pc.addEventListener('icegatheringstatechange', checkState)
   })
 }
+
+// ── Cloudflare Stream / WHIP ──
+const startWhipBroadcast = useCallback(async () => {
+  const stream = liveStreamRef.current
+  const url = whipUrl.trim()
+
+  if (!stream) {
+    alert('LIVE映像がまだ準備できていません')
+    return
+  }
+
+  if (!url) {
+    alert('先にWHIP URLを保存してください')
+    return
+  }
+
+  try {
+    whipPeerRef.current?.close()
+
+    const peer = new RTCPeerConnection()
+    whipPeerRef.current = peer
+
+    stream.getTracks().forEach(track => {
+      peer.addTransceiver(track, {
+        direction: 'sendonly',
+        streams: [stream],
+      })
+    })
+
+    const offer = await peer.createOffer()
+    await peer.setLocalDescription(offer)
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/sdp',
+      },
+      body: offer.sdp,
+    })
+
+    if (!response.ok) {
+      throw new Error(`WHIP接続失敗: ${response.status}`)
+    }
+
+    const answer = await response.text()
+
+    await peer.setRemoteDescription({
+      type: 'answer',
+      sdp: answer,
+    })
+
+    console.log('Cloudflare Stream WHIP接続成功')
+  } catch (error) {
+    console.error('WHIP broadcast failed:', error)
+
+    whipPeerRef.current?.close()
+    whipPeerRef.current = null
+
+    alert(
+      `Cloudflare Streamへの接続に失敗しました\n\n${
+        error instanceof Error ? error.message : String(error)
+      }`
+    )
+  }
+}, [whipUrl])
   
 const createSenderOffer = useCallback(async () => {
   const stream = liveStreamRef.current
