@@ -975,6 +975,12 @@ const receiver = new RTCPeerConnection({
     
     receiver.oniceconnectionstatechange = async () => {
   console.log('Receiver ICE:', receiver.iceConnectionState)
+  if (
+  receiver.iceConnectionState === 'connected' ||
+  receiver.iceConnectionState === 'completed'
+) {
+  setRtcStatus('connected')
+}
 
   if (
     receiver.iceConnectionState === 'connected' ||
