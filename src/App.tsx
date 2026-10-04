@@ -1549,6 +1549,10 @@ if (whipUrl.trim()) {
 
   stopWebRTCTest()
 
+     // Cloudflare Stream / WHIP を終了
+  whipPeerRef.current?.close()
+  whipPeerRef.current = null
+
   if (timerRef.current) {
     clearInterval(timerRef.current)
     timerRef.current = null
