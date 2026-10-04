@@ -824,6 +824,77 @@ if (false) {
     alert('Offer の生成に失敗しました')
   }
 }, [])
+
+  const applyReceiverAnswer = useCallback(async () => {
+ let answerTextToUse = remoteAnswerText.trim()
+
+if (!answerTextToUse) {
+  const response = await fetch(
+    `${SIGNALING_BASE_URL}/rooms/${encodeURIComponent(SIGNALING_ROOM_ID)}/answer`,
+    { cache: 'no-store' }
+  )
+
+  if (!response.ok) {
+    alert('シグナリングサーバーにAnswerがまだありません')
+    return
+  }
+
+  const data = await response.json()
+
+  if (data.status !== 'ok' || !data.description) {
+    alert('Answerを取得できませんでした')
+    return
+  }
+
+  answerTextToUse = JSON.stringify(data.description)
+  setRemoteAnswerText(answerTextToUse)
+}
+
+  const sender = rtcSenderRef.current
+
+  if (!sender) {
+    alert('先にOfferを作ってください')
+    return
+  }
+
+  try {
+    const parsedAnswer = JSON.parse(answerTextToUse)
+
+    const fingerprintLine = parsedAnswer.sdp
+    .split('\r\n')
+    .find((line: string) => line.startsWith('a=fingerprint:'))
+
+    alert(fingerprintLine ?? 'fingerprintが見つかりません')
+    
+    sender.onconnectionstatechange = () => {
+      if (sender.connectionState === 'connected') {
+        setRtcStatus('connected')
+      }
+
+      if (
+        sender.connectionState === 'failed' ||
+        sender.connectionState === 'disconnected' ||
+        sender.connectionState === 'closed'
+      ) {
+        setRtcStatus('failed')
+      }
+    }
+
+    setRtcStatus('connecting')
+
+    await sender.setRemoteDescription(parsedAnswer)
+  } catch (error) {
+  console.error('Answer apply failed:', error)
+  setRtcStatus('failed')
+
+  const message =
+    error instanceof Error
+      ? `${error.name}: ${error.message}`
+      : String(error)
+
+  alert(`Answerの読み込みに失敗しました\n\n${message}`)
+}
+}, [])
   
 const createReceiverAnswer = useCallback(async () => {
  
