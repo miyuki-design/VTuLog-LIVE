@@ -648,7 +648,7 @@ const fetchYouTubeLive = useCallback(async () => {
   }
 
   const response = await fetch(
-    'https://www.googleapis.com/youtube/v3/liveBroadcasts?part=id,snippet&broadcastStatus=active&mine=true',
+    'https://www.googleapis.com/youtube/v3/liveBroadcasts?part=id,snippet&broadcastStatus=active&broadcastType=all&mine=true',
     {
       headers: {
         Authorization: `Bearer ${accessToken}`,
