@@ -1507,12 +1507,16 @@ let audioStream: MediaStream | null = null
       ...(audioStream?.getAudioTracks() ?? []),
     ]
 
-    const liveStream = new MediaStream(tracks)
+   const liveStream = new MediaStream(tracks)
 
-    liveStreamRef.current = liveStream
+liveStreamRef.current = liveStream
 
-   if (rtcRole === 'sender') {
+if (rtcRole === 'sender') {
   void createSenderOffer()
+}
+
+if (whipUrl.trim()) {
+  void startWhipBroadcast()
 }
     
     setLiveTime(0)
@@ -1521,7 +1525,7 @@ let audioStream: MediaStream | null = null
     timerRef.current = setInterval(() => {
       setLiveTime(t => t + 1)
     }, 1000)
-  }, [rtcRole, createSenderOffer])
+  }, [rtcRole, createSenderOffer, whipUrl, startWhipBroadcast])
 
     // ── Stop LIVE ──
  const stopLive = useCallback(() => {
