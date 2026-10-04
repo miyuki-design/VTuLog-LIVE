@@ -1443,20 +1443,6 @@ await sender.setRemoteDescription(receiver.localDescription)
     {videoTrackInfo}
   </div>
 )}
-
-{rtcRole === 'sender' && (
-  <div
-    style={{
-      fontSize: '10px',
-      color: 'var(--color-cyan)',
-      padding: '4px 12px',
-      textAlign: 'center',
-      flexShrink: 0,
-    }}
-  >
-    ICE: {receiverCandidateDebug}
-  </div>
-)}
         
         {/* viewfinder */}
         <div className="relative flex-1 mx-3 rounded-2xl overflow-hidden" style={{ minHeight: 0 }}>
