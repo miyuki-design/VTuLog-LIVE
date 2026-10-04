@@ -1454,6 +1454,23 @@ await sender.setRemoteDescription(receiver.localDescription)
     </div>
   )}
 </div>
+
+          {rtcRole === 'sender' && appState === 'live' && (
+  <div
+    className="glass rounded-full px-3 py-1"
+    style={{
+      fontSize: '10px',
+      color: rtcStatus === 'connected'
+        ? 'var(--color-cyan)'
+        : 'var(--color-muted)',
+      fontFamily: 'var(--font-display)',
+      fontWeight: 600,
+    }}
+  >
+    {rtcStatus === 'connected' ? '● PC接続済み' : '● PC接続待ち…'}
+  </div>
+)}
+          
         </div>
         
         {/* viewfinder */}
