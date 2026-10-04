@@ -1557,9 +1557,24 @@ if (whipUrl.trim()) {
 
   stopWebRTCTest()
 
-     // Cloudflare Stream / WHIP を終了
-  whipPeerRef.current?.close()
-  whipPeerRef.current = null
+  // Cloudflare Stream / WHIP を終了
+const whipSessionUrl = whipSessionUrlRef.current
+
+if (whipSessionUrl) {
+  try {
+    await fetch(whipSessionUrl, {
+      method: 'DELETE',
+    })
+    console.log('Cloudflare Stream WHIPセッション終了')
+  } catch (error) {
+    console.error('WHIPセッション終了失敗:', error)
+  }
+
+  whipSessionUrlRef.current = null
+}
+
+whipPeerRef.current?.close()
+whipPeerRef.current = null
 
   if (timerRef.current) {
     clearInterval(timerRef.current)
