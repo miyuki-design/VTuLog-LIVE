@@ -343,6 +343,29 @@ const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const displayAvatarName = isLive2DActive ? live2d.modelName : useCustom ? avatarName : presetAvatar.name
   const displayAvatarColor = isLive2DActive ? '#00E5FF' : useCustom ? '#FF3FA4' : presetAvatar.color
 
+  // ── YouTube OAuth callback ──
+useEffect(() => {
+  const hash = window.location.hash
+
+  if (!hash.includes('access_token=')) return
+
+  const params = new URLSearchParams(hash.substring(1))
+  const accessToken = params.get('access_token')
+
+  if (!accessToken) return
+
+  localStorage.setItem('youtube-access-token', accessToken)
+
+  // URLからアクセストークンを消す
+  window.history.replaceState(
+    {},
+    document.title,
+    window.location.pathname
+  )
+
+  console.log('YouTube OAuth 接続成功')
+}, [])
+  
   // ── Camera init ──
   useEffect(() => {
     let localStream: MediaStream | null = null
