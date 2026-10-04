@@ -1,6 +1,6 @@
 {
-  "name": "VTuLog",
-  "short_name": "VTuLog",
+  "name": "VTuLog LIVE",
+  "short_name": "VTuLog LIVE",
   "description": "VTuber向けVlogカメラアプリ",
   "start_url": "/",
   "display": "standalone",
@@ -9,15 +9,15 @@
   "theme_color": "#FF3FA4",
   "icons": [
     {
-      "src": "/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/VTuLogLIVEicon.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/VTuLogLIVEicon.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
       "purpose": "maskable"
     }
   ]
