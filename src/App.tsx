@@ -638,6 +638,30 @@ const connectYouTube = useCallback(() => {
     `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`
 }, [])
 
+  // ── YouTube LIVE取得 ──
+const fetchYouTubeLive = useCallback(async () => {
+  const accessToken = localStorage.getItem('youtube-access-token')
+
+  if (!accessToken) {
+    alert('先にYouTubeへ接続してください')
+    return
+  }
+
+  const response = await fetch(
+    'https://www.googleapis.com/youtube/v3/liveBroadcasts?part=id,snippet&broadcastStatus=active&mine=true',
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  )
+
+  const data = await response.json()
+
+  console.log('YouTube LIVE:', data)
+  alert(`YouTube API接続成功 / 配信数: ${data.items?.length ?? 0}`)
+}, [])
+
   // ── Microphone ON / OFF ──
 const toggleMic = useCallback(() => {
   const audioTracks = audioStreamRef.current?.getAudioTracks() ?? []
