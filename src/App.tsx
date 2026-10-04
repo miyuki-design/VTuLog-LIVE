@@ -335,6 +335,9 @@ const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [micError, setMicError] = useState<string | null>(null)
   const [videoTrackInfo, setVideoTrackInfo] = useState('')
   const [micEnabled, setMicEnabled] = useState(true)
+  const [youtubeComments, setYoutubeComments] = useState<
+  { id: string; author: string; message: string }[]
+>([])
 
   const isCapturing = true
   const isLive = appState === 'live'
