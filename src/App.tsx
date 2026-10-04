@@ -301,6 +301,7 @@ export default function App() {
 
   // ── Cloudflare Stream / WHIP ──
 const whipPeerRef = useRef<RTCPeerConnection | null>(null)
+  const whipSessionUrlRef = useRef<string | null>(null)
 const [whipUrl, setWhipUrl] = useState(() =>
   localStorage.getItem('vtulog-whip-url') ?? ''
 )
