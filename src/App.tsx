@@ -214,6 +214,7 @@ const SIGNALING_BASE_URL = 'https://vtulog-signal.miminoz0822.workers.dev'
 const SIGNALING_ROOM_ID = 'mimi-live'
 const GOOGLE_CLIENT_ID = '1076202528911-6letsd2va5jkp1tvf0hc9li0l2ebjtmc.apps.googleusercontent.com'
 const GOOGLE_REDIRECT_URI = `${window.location.origin}/oauth/callback`
+const YOUTUBE_SCOPE = 'https://www.googleapis.com/auth/youtube.readonly'
 
 async function getIceServers(): Promise<RTCIceServer[]> {
   const response = await fetch(
@@ -598,6 +599,21 @@ const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
     setVtScale(ns)
     saveAvatarTransform()
   }, [saveAvatarTransform])
+
+  // ── YouTube OAuth ──
+const connectYouTube = useCallback(() => {
+  const params = new URLSearchParams({
+    client_id: GOOGLE_CLIENT_ID,
+    redirect_uri: GOOGLE_REDIRECT_URI,
+    response_type: 'token',
+    scope: YOUTUBE_SCOPE,
+    include_granted_scopes: 'true',
+    prompt: 'consent',
+  })
+
+  window.location.href =
+    `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`
+}, [])
 
   // ── Microphone ON / OFF ──
 const toggleMic = useCallback(() => {
