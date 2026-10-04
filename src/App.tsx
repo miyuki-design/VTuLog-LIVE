@@ -2057,6 +2057,37 @@ useEffect(() => {
     📡 YouTube LIVE確認
   </button>
 )}
+
+{youtubeComments.length > 0 && (
+  <div
+    style={{
+      width: '100%',
+      marginTop: '10px',
+      padding: '10px 12px',
+      borderRadius: '14px',
+      background: 'rgba(0,0,0,0.55)',
+      border: '1px solid rgba(255,255,255,0.12)',
+      backdropFilter: 'blur(8px)',
+    }}
+  >
+    {youtubeComments.slice(-5).map(comment => (
+      <div
+        key={comment.id}
+        style={{
+          fontSize: '12px',
+          color: '#fff',
+          lineHeight: 1.5,
+          marginBottom: '4px',
+        }}
+      >
+        <strong style={{ color: 'var(--color-cyan)' }}>
+          {comment.author}
+        </strong>
+        ：{comment.message}
+      </div>
+    ))}
+  </div>
+)}
           
 {appState === 'live' && (
   <div className="flex flex-col items-center gap-3 animate-fade-in">
