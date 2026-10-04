@@ -698,19 +698,15 @@ const fetchYouTubeLive = useCallback(async () => {
     return
   }
 
-  const comments = (chatData.items ?? [])
-    .filter((item: any) => item.snippet?.displayMessage)
-    .map(
-      (item: any) =>
-        `${item.authorDetails?.displayName ?? '名無し'}：${item.snippet.displayMessage}`
-    )
-    .join('\n')
+ const comments = (chatData.items ?? [])
+  .filter((item: any) => item.snippet?.displayMessage)
+  .map((item: any) => ({
+    id: item.id,
+    author: item.authorDetails?.displayName ?? '名無し',
+    message: item.snippet.displayMessage,
+  }))
 
-  alert(
-    comments
-      ? `💬 YouTube LIVEコメント\n\n${comments}`
-      : 'コメントはまだありません'
-  )
+setYoutubeComments(comments)
 }, [])
   
   // ── Microphone ON / OFF ──
