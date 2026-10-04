@@ -1342,6 +1342,29 @@ await sender.setRemoteDescription(receiver.localDescription)
     background: '#000',
   }}
 />
+
+      {rtcRole === 'receiver' && appState === 'live' && (
+  <button
+    onClick={stopLive}
+    style={{
+      position: 'fixed',
+      top: '16px',
+      right: '16px',
+      zIndex: 10000,
+      padding: '10px 16px',
+      borderRadius: '999px',
+      border: '1px solid rgba(255,255,255,0.25)',
+      background: 'rgba(0,0,0,0.65)',
+      color: '#fff',
+      fontSize: '13px',
+      fontWeight: 600,
+      cursor: 'pointer',
+      backdropFilter: 'blur(8px)',
+    }}
+  >
+    LIVE終了
+  </button>
+)}
       
       {/* hidden file inputs */}
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
