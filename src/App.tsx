@@ -807,6 +807,51 @@ const createYouTubeTestBroadcast = useCallback(async () => {
   }
 }, [])
 
+// ── YouTube 既存Live Stream取得 ──
+const fetchYouTubeLiveStreams = useCallback(async () => {
+  const accessToken = localStorage.getItem('youtube-access-token')
+
+  if (!accessToken) {
+    alert('先にYouTubeへ接続してください')
+    return
+  }
+
+  try {
+    const response = await fetch(
+      'https://www.googleapis.com/youtube/v3/liveStreams?part=id,snippet,cdn,status&mine=true&maxResults=50',
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      console.error('YouTube Live Stream取得失敗:', data)
+      alert(`Live Stream取得失敗: ${data.error?.message ?? response.status}`)
+      return
+    }
+
+    console.log('YouTube Live Streams:', data.items)
+
+    if (!data.items?.length) {
+      alert('YouTubeの配信先が見つかりませんでした')
+      return
+    }
+
+    alert(`YouTubeの配信先を ${data.items.length} 件見つけました`)
+  } catch (error) {
+    console.error('YouTube Live Stream取得エラー:', error)
+    alert(
+      `Live Stream取得エラー\n\n${
+        error instanceof Error ? error.message : String(error)
+      }`
+    )
+  }
+}, [])
+  
  // ── YouTube コメント自動更新 ──
 // 一時停止：配信テスト中にYouTube APIエラーが10秒ごとに出るのを防ぐ
 /*
