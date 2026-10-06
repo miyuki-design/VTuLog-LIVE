@@ -851,6 +851,86 @@ const fetchYouTubeLiveStreams = useCallback(async () => {
     )
   }
 }, [])
+
+  // ── YouTube 配信枠と配信先を紐づけ ──
+const bindYouTubeBroadcast = useCallback(async () => {
+  const accessToken = localStorage.getItem('youtube-access-token')
+
+  if (!accessToken) {
+    alert('先にYouTubeへ接続してください')
+    return
+  }
+
+  try {
+    // 待機中の配信枠を取得
+    const broadcastResponse = await fetch(
+      'https://www.googleapis.com/youtube/v3/liveBroadcasts?part=id,snippet,status&broadcastStatus=upcoming&broadcastType=all&maxResults=50',
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    )
+
+    const broadcastData = await broadcastResponse.json()
+
+    if (!broadcastResponse.ok || !broadcastData.items?.length) {
+      alert('待機中のYouTube配信枠が見つかりません')
+      return
+    }
+
+    // 一番新しい配信枠
+    const broadcast = broadcastData.items[0]
+
+    // 配信先を取得
+    const streamResponse = await fetch(
+      'https://www.googleapis.com/youtube/v3/liveStreams?part=id,snippet,status&mine=true&maxResults=50',
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    )
+
+    const streamData = await streamResponse.json()
+
+    if (!streamResponse.ok || !streamData.items?.length) {
+      alert('YouTubeの配信先が見つかりません')
+      return
+    }
+
+    const stream = streamData.items[0]
+
+    // bind
+    const bindResponse = await fetch(
+      `https://www.googleapis.com/youtube/v3/liveBroadcasts/bind?id=${encodeURIComponent(broadcast.id)}&streamId=${encodeURIComponent(stream.id)}&part=id,contentDetails`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    )
+
+    const bindData = await bindResponse.json()
+
+    if (!bindResponse.ok) {
+      console.error('YouTube bind失敗:', bindData)
+      alert(`配信枠の紐づけに失敗しました\n\n${bindData.error?.message ?? bindResponse.status}`)
+      return
+    }
+
+    console.log('YouTube bind成功:', bindData)
+    alert('YouTube配信枠と配信先を紐づけました！')
+  } catch (error) {
+    console.error('YouTube bindエラー:', error)
+    alert(
+      `配信枠の紐づけ中にエラーが発生しました\n\n${
+        error instanceof Error ? error.message : String(error)
+      }`
+    )
+  }
+}, [])
   
  // ── YouTube コメント自動更新 ──
 // 一時停止：配信テスト中にYouTube APIエラーが10秒ごとに出るのを防ぐ
