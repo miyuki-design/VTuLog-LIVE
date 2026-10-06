@@ -742,6 +742,71 @@ const fetchYouTubeLive = useCallback(async () => {
 setYoutubeComments(comments)
 }, [])
 
+  // ── YouTube テスト配信枠作成 ──
+const createYouTubeTestBroadcast = useCallback(async () => {
+  const accessToken = localStorage.getItem('youtube-access-token')
+
+  if (!accessToken) {
+    alert('先にYouTubeへ接続してください')
+    return
+  }
+
+  try {
+    const response = await fetch(
+      'https://www.googleapis.com/youtube/v3/liveBroadcasts?part=snippet,status,contentDetails',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          snippet: {
+            title: 'VTuLog LIVE テスト',
+            scheduledStartTime: new Date(Date.now() + 60_000).toISOString(),
+          },
+          status: {
+            privacyStatus: 'unlisted',
+            selfDeclaredMadeForKids: false,
+          },
+          contentDetails: {
+            enableAutoStart: true,
+            enableAutoStop: true,
+          },
+        }),
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      console.error('YouTube Broadcast作成失敗:', data)
+      alert(
+        `YouTube配信枠の作成に失敗しました\n\n${
+          data.error?.message ?? response.status
+        }`
+      )
+      return
+    }
+
+    console.log('YouTube Broadcast作成成功:', data)
+
+    alert(
+      `YouTube配信枠を作成しました！\n\n` +
+      `タイトル: ${data.snippet?.title ?? '不明'}\n` +
+      `Broadcast ID: ${data.id ?? '不明'}`
+    )
+  } catch (error) {
+    console.error('YouTube Broadcast作成エラー:', error)
+
+    alert(
+      `YouTube配信枠の作成中にエラーが発生しました\n\n${
+        error instanceof Error ? error.message : String(error)
+      }`
+    )
+  }
+}, [])
+
  // ── YouTube コメント自動更新 ──
 // 一時停止：配信テスト中にYouTube APIエラーが10秒ごとに出るのを防ぐ
 /*
@@ -2251,6 +2316,25 @@ useEffect(() => {
     }}
   >
     📡 YouTube LIVE確認
+  </button>
+)}
+
+{appState === 'idle' && (
+  <button
+    onClick={createYouTubeTestBroadcast}
+    style={{
+      marginTop: '8px',
+      padding: '10px 18px',
+      borderRadius: '999px',
+      border: '1px solid rgba(255,59,59,0.35)',
+      background: 'rgba(255,59,59,0.10)',
+      color: '#ff8a8a',
+      fontSize: '13px',
+      fontWeight: 600,
+      cursor: 'pointer',
+    }}
+  >
+    🔴 YouTubeテスト配信枠を作成
   </button>
 )}
 
