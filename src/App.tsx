@@ -2531,6 +2531,25 @@ useEffect(() => {
     🔎 YouTube配信先を確認
   </button>
 )}
+
+{appState === 'idle' && (
+  <button
+    onClick={bindYouTubeBroadcast}
+    style={{
+      marginTop: '8px',
+      padding: '10px 18px',
+      borderRadius: '999px',
+      border: '1px solid rgba(0,229,255,0.3)',
+      background: 'rgba(0,229,255,0.08)',
+      color: 'var(--color-cyan)',
+      fontSize: '13px',
+      fontWeight: 600,
+      cursor: 'pointer',
+    }}
+  >
+    🔗 YouTube配信枠と配信先を紐づけ
+  </button>
+)}
           
 {youtubeComments.length > 0 && (
   <div
