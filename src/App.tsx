@@ -214,7 +214,7 @@ const SIGNALING_BASE_URL = 'https://vtulog-signal.miminoz0822.workers.dev'
 const SIGNALING_ROOM_ID = 'mimi-live'
 const GOOGLE_CLIENT_ID = '1076202528911-6letsd2va5jkp1tvf0hc9li0l2ebjtmc.apps.googleusercontent.com'
 const GOOGLE_REDIRECT_URI = `${window.location.origin}/oauth/callback`
-const YOUTUBE_SCOPE = 'https://www.googleapis.com/auth/youtube.readonly'
+const YOUTUBE_SCOPE = 'https://www.googleapis.com/auth/youtube'
 
 async function getIceServers(): Promise<RTCIceServer[]> {
   const response = await fetch(
