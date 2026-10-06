@@ -766,8 +766,8 @@ const createYouTubeTestBroadcast = useCallback(async () => {
             scheduledStartTime: new Date(Date.now() + 60_000).toISOString(),
           },
           status: {
-            privacyStatus: 'unlisted',
-            selfDeclaredMadeForKids: false,
+          privacyStatus: 'public',
+          selfDeclaredMadeForKids: false,
           },
           contentDetails: {
             enableAutoStart: true,
