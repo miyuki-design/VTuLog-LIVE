@@ -306,6 +306,32 @@ const [whipUrl, setWhipUrl] = useState(() =>
   localStorage.getItem('vtulog-whip-url') ?? ''
 )
 
+const fetchLatestWhipUrl = async () => {
+  try {
+    const response = await fetch(
+      'https://vtulog-signal.miminoz0822.workers.dev/whip-url'
+    )
+
+    if (!response.ok) {
+      throw new Error(`WHIP URL取得失敗: ${response.status}`)
+    }
+
+    const data = await response.json()
+
+    if (!data?.url || typeof data.url !== 'string') {
+      throw new Error('WHIP URLが見つかりません')
+    }
+
+    setWhipUrl(data.url)
+    localStorage.setItem('vtulog-whip-url', data.url)
+
+    return data.url
+  } catch (error) {
+    console.error('最新WHIP URL取得失敗:', error)
+    return null
+  }
+}
+  
   const [rtcStatus, setRtcStatus] = useState<
   'idle' | 'connecting' | 'connected' | 'failed'
 >('idle')
@@ -813,9 +839,9 @@ const waitForIceGatheringComplete = (
 }
 
 // ── Cloudflare Stream / WHIP ──
-const startWhipBroadcast = useCallback(async () => {
+const startWhipBroadcast = useCallback(async (overrideUrl?: string) => {
   const stream = liveStreamRef.current
-  const url = whipUrl.trim()
+  const url = (overrideUrl ?? whipUrl).trim()
 
   if (!stream) {
     alert('LIVE映像がまだ準備できていません')
@@ -1526,8 +1552,10 @@ if (rtcRole === 'sender') {
   void createSenderOffer()
 }
 
-if (whipUrl.trim()) {
-  void startWhipBroadcast()
+const latestWhipUrl = await fetchLatestWhipUrl()
+
+if (latestWhipUrl) {
+  void startWhipBroadcast(latestWhipUrl)
 }
     
     setLiveTime(0)
