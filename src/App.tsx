@@ -1694,9 +1694,9 @@ let audioStream: MediaStream | null = null
         audio: {
           sampleRate: { ideal: 48000 },
           channelCount: { ideal: 1 },
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
         },
       })
 
