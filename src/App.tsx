@@ -1526,9 +1526,9 @@ if (rtcRole === 'sender') {
   void createSenderOffer()
 }
 
-// if (whipUrl.trim()) {
-//   void startWhipBroadcast()
-// }
+if (whipUrl.trim()) {
+  void startWhipBroadcast()
+}
     
     setLiveTime(0)
     setAppState('live')
