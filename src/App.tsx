@@ -790,6 +790,7 @@ const createYouTubeTestBroadcast = useCallback(async () => {
     }
 
     console.log('YouTube Broadcast作成成功:', data)
+    localStorage.setItem('youtube-broadcast-id', data.id)
 
     alert(
       `YouTube配信枠を作成しました！\n\n` +
@@ -862,25 +863,13 @@ const bindYouTubeBroadcast = useCallback(async () => {
   }
 
   try {
-    // 待機中の配信枠を取得
-    const broadcastResponse = await fetch(
-      'https://www.googleapis.com/youtube/v3/liveBroadcasts?part=id,snippet,status&broadcastStatus=upcoming&broadcastType=all&maxResults=50',
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    )
+    // 今回作成した配信枠を指定
+      const broadcastId = localStorage.getItem('youtube-broadcast-id')
 
-    const broadcastData = await broadcastResponse.json()
-
-    if (!broadcastResponse.ok || !broadcastData.items?.length) {
-      alert('待機中のYouTube配信枠が見つかりません')
+      if (!broadcastId) {
+      alert('今回作成したYouTube配信枠のIDがありません\n先に「配信枠を作成」を押してください')
       return
-    }
-
-    // 一番新しい配信枠
-    const broadcast = broadcastData.items[0]
+      }
 
     // 配信先を取得
     const streamResponse = await fetch(
@@ -903,7 +892,7 @@ const bindYouTubeBroadcast = useCallback(async () => {
 
     // bind
     const bindResponse = await fetch(
-      `https://www.googleapis.com/youtube/v3/liveBroadcasts/bind?id=${encodeURIComponent(broadcast.id)}&streamId=${encodeURIComponent(stream.id)}&part=id,contentDetails`,
+      `https://www.googleapis.com/youtube/v3/liveBroadcasts/bind?id=${encodeURIComponent(broadcastId)}&streamId=${encodeURIComponent(stream.id)}&part=id,contentDetails`,
       {
         method: 'POST',
         headers: {
