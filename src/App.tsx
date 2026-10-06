@@ -1728,6 +1728,56 @@ whipPeerRef.current = null
   liveStreamRef.current?.getTracks().forEach(track => track.stop())
   liveStreamRef.current = null
 
+     // YouTube LIVEも終了
+  const accessToken = localStorage.getItem('youtube-access-token')
+
+  if (accessToken) {
+    try {
+      const broadcastResponse = await fetch(
+        'https://www.googleapis.com/youtube/v3/liveBroadcasts?part=id,status&broadcastStatus=active&broadcastType=all&maxResults=50',
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      )
+
+      const broadcastData = await broadcastResponse.json()
+
+      if (!broadcastResponse.ok) {
+        console.error('YouTube LIVE取得失敗:', broadcastData)
+      } else {
+        const liveBroadcast = (broadcastData.items ?? []).find(
+          (item: any) => item.status?.lifeCycleStatus === 'live'
+        )
+
+        if (liveBroadcast?.id) {
+          const transitionResponse = await fetch(
+            `https://www.googleapis.com/youtube/v3/liveBroadcasts/transition?broadcastStatus=complete&id=${encodeURIComponent(liveBroadcast.id)}&part=status`,
+            {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
+            }
+          )
+
+          const transitionData = await transitionResponse.json()
+
+          if (!transitionResponse.ok) {
+            console.error('YouTube LIVE終了失敗:', transitionData)
+          } else {
+            console.log('YouTube LIVE終了成功:', transitionData)
+          }
+        } else {
+          console.log('終了対象のYouTube LIVEはありません')
+        }
+      }
+    } catch (error) {
+      console.error('YouTube LIVE終了処理エラー:', error)
+    }
+  }
+
   setAppState('idle')
   setLiveTime(0)
 }, [rtcRole, stopWebRTCTest])
