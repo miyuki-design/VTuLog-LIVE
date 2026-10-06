@@ -716,7 +716,9 @@ const fetchYouTubeLive = useCallback(async () => {
 setYoutubeComments(comments)
 }, [])
 
-  // ── YouTube コメント自動更新 ──
+ // ── YouTube コメント自動更新 ──
+// 一時停止：配信テスト中にYouTube APIエラーが10秒ごとに出るのを防ぐ
+/*
 useEffect(() => {
   if (appState !== 'live') return
 
@@ -728,6 +730,7 @@ useEffect(() => {
 
   return () => clearInterval(interval)
 }, [appState, fetchYouTubeLive])
+*/
   
   // ── Microphone ON / OFF ──
 const toggleMic = useCallback(() => {
