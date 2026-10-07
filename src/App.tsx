@@ -371,7 +371,8 @@ const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [youtubeComments, setYoutubeComments] = useState<
   { id: string; author: string; message: string }[]
 >([])
-
+  const [youtubeTitle, setYoutubeTitle] = useState('VTuLog LIVE')
+  
   const isCapturing = true
   const isLive = appState === 'live'
   const presetAvatar = PRESET_AVATARS[selectedPreset]
@@ -762,7 +763,7 @@ const createYouTubeTestBroadcast = useCallback(async () => {
         },
         body: JSON.stringify({
           snippet: {
-            title: 'VTuLog LIVE テスト',
+            title: youtubeTitle.trim() || 'VTuLog LIVE',
             scheduledStartTime: new Date(Date.now() + 60_000).toISOString(),
           },
           status: {
@@ -806,7 +807,7 @@ const createYouTubeTestBroadcast = useCallback(async () => {
       }`
     )
   }
-}, [])
+}, [youtubeTitle])
 
 // ── YouTube 既存Live Stream取得 ──
 const fetchYouTubeLiveStreams = useCallback(async () => {
@@ -2484,6 +2485,27 @@ useEffect(() => {
 )}
 
 {appState === 'idle' && (
+  <input
+    type="text"
+    value={youtubeTitle}
+    onChange={e => setYoutubeTitle(e.target.value)}
+    placeholder="YouTube配信タイトル"
+    maxLength={100}
+    style={{
+      width: '100%',
+      marginTop: '8px',
+      padding: '10px 12px',
+      borderRadius: '10px',
+      border: '1px solid rgba(255,255,255,0.2)',
+      background: 'rgba(0,0,0,0.25)',
+      color: '#fff',
+      fontSize: '13px',
+      outline: 'none',
+    }}
+  />
+)}
+          
+{appState === 'idle' && (
   <button
     onClick={createYouTubeTestBroadcast}
     style={{
@@ -2498,7 +2520,7 @@ useEffect(() => {
       cursor: 'pointer',
     }}
   >
-    🔴 YouTubeテスト配信枠を作成
+    🔴 YouTube配信枠を作成
   </button>
 )}
 
