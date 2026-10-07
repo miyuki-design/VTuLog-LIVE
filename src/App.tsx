@@ -676,73 +676,114 @@ const connectYouTube = useCallback(() => {
 }, [])
 
 // ── YouTube LIVE + コメント取得 ──
-const fetchYouTubeLive = useCallback(async () => {
+const fetchYouTubeLive = useCallback(async (silent = false) => {
   const accessToken = localStorage.getItem('youtube-access-token')
 
   if (!accessToken) {
-    alert('先にYouTubeへ接続してください')
-    return
-  }
-
-  // 配信一覧を取得
-  const broadcastResponse = await fetch(
-    'https://www.googleapis.com/youtube/v3/liveBroadcasts?part=id,snippet,status&broadcastStatus=all&broadcastType=all&maxResults=50',
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+    if (!silent) {
+      alert('先にYouTubeへ接続してください')
     }
-  )
-
-  const broadcastData = await broadcastResponse.json()
-
-  if (!broadcastResponse.ok) {
-    alert(`YouTube APIエラー: ${broadcastData.error?.message ?? broadcastResponse.status}`)
-    return
+    return 'error'
   }
 
-  // live状態の配信を探す
-  const liveBroadcast = (broadcastData.items ?? []).find(
-    (item: any) =>
-      item.status?.lifeCycleStatus === 'live' &&
-      item.snippet?.liveChatId
-  )
+  try {
+    // 配信一覧を取得
+    const broadcastResponse = await fetch(
+      'https://www.googleapis.com/youtube/v3/liveBroadcasts?part=id,snippet,status&broadcastStatus=all&broadcastType=all&maxResults=50',
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    )
 
-  if (!liveBroadcast) {
-    alert('現在LIVE中の配信が見つかりません')
-    return
-  }
+    const broadcastData = await broadcastResponse.json()
 
-  const liveChatId = liveBroadcast.snippet.liveChatId
+    if (!broadcastResponse.ok) {
+      console.error('YouTube APIエラー:', broadcastData)
 
-  // コメント取得
-  const chatResponse = await fetch(
-    `https://www.googleapis.com/youtube/v3/liveChat/messages?liveChatId=${encodeURIComponent(liveChatId)}&part=snippet,authorDetails`,
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+      if (!silent) {
+        alert(
+          `YouTube APIエラー: ${
+            broadcastData.error?.message ?? broadcastResponse.status
+          }`
+        )
+      }
+
+      return 'error'
     }
-  )
 
-  const chatData = await chatResponse.json()
+    // live状態の配信を探す
+    const liveBroadcast = (broadcastData.items ?? []).find(
+      (item: any) =>
+        item.status?.lifeCycleStatus === 'live' &&
+        item.snippet?.liveChatId
+    )
 
-  if (!chatResponse.ok) {
-    alert(`コメント取得エラー: ${chatData.error?.message ?? chatResponse.status}`)
-    return
+    if (!liveBroadcast) {
+      if (!silent) {
+        alert('現在LIVE中の配信が見つかりません')
+      }
+
+      return 'waiting'
+    }
+
+    const liveChatId = liveBroadcast.snippet.liveChatId
+
+    // コメント取得
+    const chatResponse = await fetch(
+      `https://www.googleapis.com/youtube/v3/liveChat/messages?liveChatId=${encodeURIComponent(
+        liveChatId
+      )}&part=snippet,authorDetails`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    )
+
+    const chatData = await chatResponse.json()
+
+    if (!chatResponse.ok) {
+      console.error('コメント取得エラー:', chatData)
+
+      if (!silent) {
+        alert(
+          `コメント取得エラー: ${
+            chatData.error?.message ?? chatResponse.status
+          }`
+        )
+      }
+
+      return 'error'
+    }
+
+    const comments = (chatData.items ?? [])
+      .filter((item: any) => item.snippet?.displayMessage)
+      .map((item: any) => ({
+        id: item.id,
+        author: item.authorDetails?.displayName ?? '名無し',
+        message: item.snippet.displayMessage,
+      }))
+
+    setYoutubeComments(comments)
+
+    return 'ok'
+  } catch (error) {
+    console.error('YouTubeコメント取得中にエラー:', error)
+
+    if (!silent) {
+      alert(
+        `YouTubeコメント取得中にエラーが発生しました\n\n${
+          error instanceof Error ? error.message : String(error)
+        }`
+      )
+    }
+
+    return 'error'
   }
-
- const comments = (chatData.items ?? [])
-  .filter((item: any) => item.snippet?.displayMessage)
-  .map((item: any) => ({
-    id: item.id,
-    author: item.authorDetails?.displayName ?? '名無し',
-    message: item.snippet.displayMessage,
-  }))
-
-setYoutubeComments(comments)
 }, [])
-
+  
   // ── YouTube テスト配信枠作成 ──
 const createYouTubeTestBroadcast = useCallback(async () => {
   const accessToken = localStorage.getItem('youtube-access-token')
@@ -922,21 +963,39 @@ const bindYouTubeBroadcast = useCallback(async () => {
   }
 }, [])
   
- // ── YouTube コメント自動更新 ──
-// 一時停止：配信テスト中にYouTube APIエラーが10秒ごとに出るのを防ぐ
-/*
+// ── YouTube コメント自動更新 ──
 useEffect(() => {
   if (appState !== 'live') return
 
-  void fetchYouTubeLive()
+  let stopped = false
 
+  const refreshComments = async () => {
+    if (stopped) return
+
+    const result = await fetchYouTubeLive(true)
+
+    // 本当のAPIエラーが出たら、その配信中の自動取得を停止
+    if (result === 'error') {
+      stopped = true
+      console.warn(
+        'YouTubeコメント自動更新を停止しました。APIエラーが発生しています。'
+      )
+    }
+  }
+
+  // 配信開始直後に1回確認
+  void refreshComments()
+
+  // 30秒ごとに更新
   const interval = setInterval(() => {
-    void fetchYouTubeLive()
-  }, 10000)
+    void refreshComments()
+  }, 30000)
 
-  return () => clearInterval(interval)
+  return () => {
+    stopped = true
+    clearInterval(interval)
+  }
 }, [appState, fetchYouTubeLive])
-*/
   
   // ── Microphone ON / OFF ──
 const toggleMic = useCallback(() => {
@@ -2467,7 +2526,7 @@ useEffect(() => {
 
 {appState === 'idle' && (
   <button
-    onClick={fetchYouTubeLive}
+    onClick={() => void fetchYouTubeLive(false)}
     style={{
       marginTop: '8px',
       padding: '10px 18px',
