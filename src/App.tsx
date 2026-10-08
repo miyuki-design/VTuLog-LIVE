@@ -384,6 +384,13 @@ const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   
   const isCapturing = true
   const isLive = appState === 'live'
+  const youtubeStatusLabel: Record<YouTubeLiveStatus, string> = {
+  idle: '⚪ 配信待機中',
+  connecting: '🟡 YouTube接続確認中',
+  live: '🔴 YouTube LIVE配信中',
+  ending: '🟠 配信終了確認中',
+  ended: '✅ 配信終了',
+}
   const presetAvatar = PRESET_AVATARS[selectedPreset]
   const isLive2DActive = live2d.status === 'loaded'
   const displayAvatarName = isLive2DActive ? live2d.modelName : useCustom ? avatarName : presetAvatar.name
