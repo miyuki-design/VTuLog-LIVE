@@ -2133,10 +2133,11 @@ useEffect(() => {
 
       {/* phone frame */}
       <div
-        className="relative overflow-hidden flex flex-col"
+      className="relative overflow-y-auto overflow-x-hidden flex flex-col"
         style={{
           width: 'min(390px, 100vw)',
           height: 'min(844px, 100vh)',
+          WebkitOverflowScrolling: 'touch',
           borderRadius: 'min(44px, 5vw)',
           background: 'var(--color-surface)',
           boxShadow: '0 0 0 1px rgba(123,47,255,0.4), 0 0 60px rgba(123,47,255,0.15), 0 32px 80px rgba(0,0,0,0.6)',
