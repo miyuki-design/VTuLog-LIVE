@@ -2799,7 +2799,7 @@ useEffect(() => {
             fontSize: '14px', fontWeight: 600,
           }}
         >
-          <span>🟣 Twitch <span style={{ fontSize: '11px', color: 'var(--color-muted)' }}>（今後対応予定）</span></span>
+          <span>🟣 Twitch <span style={{ fontSize: '11px', color: '#b9a0ff' }}>（配信接続確認済み）</span></span>
           <span aria-hidden="true">›</span>
         </button>
       </div>
@@ -2823,8 +2823,19 @@ useEffect(() => {
       <div style={{ marginTop: '12px', padding: '16px', borderRadius: '14px',
         background: 'rgba(145,70,255,0.08)', border: '1px solid rgba(145,70,255,0.25)' }}>
         <div style={{ color: '#fff', fontSize: '14px', fontWeight: 600 }}>🟣 Twitch</div>
-        <p style={{ marginTop: '8px', fontSize: '12px', color: 'var(--color-muted)', lineHeight: 1.6 }}>
-          Twitch配信機能は今後追加予定です。
+        <p style={{ marginTop: '8px', fontSize: '12px', color: '#d2c7ed', lineHeight: 1.7 }}>
+          Twitchへの映像・音声送信と、配信終了時の自動停止は確認済みです。
+        </p>
+        <div style={{ marginTop: '12px', padding: '12px', borderRadius: '10px',
+          background: 'rgba(0,0,0,0.18)', color: '#fff', fontSize: '12px', lineHeight: 1.8 }}>
+          <div>💜 Twitch配信：対応済み</div>
+          <div>🔒 配信先：Oracle Cloud側で管理</div>
+          <div style={{ color: 'var(--color-muted)', marginTop: '6px' }}>
+            アプリからの配信先切り替えは準備中です。現在の送信先はここでは変更できません。
+          </div>
+        </div>
+        <p style={{ marginTop: '10px', fontSize: '11px', color: 'var(--color-muted)', lineHeight: 1.6 }}>
+          ストリームキーはアプリに入力しないでください。安全な切り替えにはサーバー側の認証付きAPIが必要です。
         </p>
       </div>
     )}
