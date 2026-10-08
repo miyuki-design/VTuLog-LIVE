@@ -1918,6 +1918,10 @@ whipPeerRef.current = null
             console.error('YouTube LIVE終了失敗:', transitionData)
           } else {
             console.log('YouTube LIVE終了成功:', transitionData)
+
+            if (transitionData.status?.lifeCycleStatus === 'complete') {
+                setYoutubeLiveStatus('ended')
+            }
           }
         } else {
           console.log('終了対象のYouTube LIVEはありません')
