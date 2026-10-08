@@ -258,6 +258,11 @@ export default function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const rafRef = useRef<number>(0)
 
+  // ── Privacy mode (safe default: camera never appears until enabled) ──
+  // This controls the actual composition canvas, not merely an HTML overlay.
+  const [privacyMode, setPrivacyMode] = useState(true)
+  const privacyModeRef = useRef(true)
+
   // ── Avatar ──
   const [customAvatarUrl, setCustomAvatarUrl] = useState<string | null>(null)
   const avatarImgRef = useRef<HTMLImageElement | null>(null)
@@ -522,6 +527,22 @@ useEffect(() => {
     img.src = url
   }, [selectedPreset])
 
+  // ── Privacy switch: hide camera immediately without rebuilding the stream ──
+  const togglePrivacyMode = useCallback(() => {
+    const nextPrivacyMode = !privacyModeRef.current
+
+    // Re-exposing a camera during a public LIVE requires deliberate consent.
+    if (!nextPrivacyMode && appState === 'live') {
+      const confirmed = window.confirm(
+        'カメラの映像を配信に表示します。\n周囲の人や職場・現在地が映っても大丈夫ですか？'
+      )
+      if (!confirmed) return
+    }
+
+    privacyModeRef.current = nextPrivacyMode
+    setPrivacyMode(nextPrivacyMode)
+  }, [appState])
+
   // ── Draw loop ──
   useEffect(() => {
     const canvas = canvasRef.current
@@ -532,7 +553,11 @@ useEffect(() => {
       const video = hiddenVideoRef.current
       ctx.clearRect(0, 0, CW, CH)
 
-      if (video && video.readyState >= 2 && video.videoWidth > 0) {
+      // Only the canvas is broadcast. Never draw camera frames in privacy mode.
+      if (privacyModeRef.current) {
+        ctx.fillStyle = '#0D0B1E'
+        ctx.fillRect(0, 0, CW, CH)
+      } else if (video && video.readyState >= 2 && video.videoWidth > 0) {
         const vw = video.videoWidth, vh = video.videoHeight
         const r = Math.max(CW / vw, CH / vh)
         const dw = vw * r, dh = vh * r
@@ -1806,6 +1831,10 @@ await sender.setRemoteDescription(receiver.localDescription)
     const canvas = canvasRef.current
     if (!canvas) return
 
+    if (!privacyModeRef.current && !window.confirm(
+      'カメラの背景映像を公開してLIVEを始めます。\n周囲の映り込みや位置の特定につながるものはありませんか？'
+    )) return
+
    setMicError(null)
    setYoutubeLiveStatus('connecting')
 
@@ -2240,6 +2269,33 @@ useEffect(() => {
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
           />
+
+          {/* Privacy button is OUTSIDE the captured canvas (never broadcast). */}
+          {rtcRole !== 'receiver' && (
+            <button
+              type="button"
+              onClick={togglePrivacyMode}
+              aria-pressed={privacyMode}
+              aria-label={privacyMode
+                ? 'プライバシーモードを解除してカメラ映像を表示'
+                : 'プライバシーモードを有効にしてカメラ映像を隠す'}
+              className="absolute rounded-xl px-3 py-2 transition-all active:scale-95"
+              style={{
+                top: isLive ? '64px' : '12px',
+                right: '8px',
+                zIndex: 24,
+                minHeight: '44px',
+                background: privacyMode ? 'rgba(14, 45, 48, 0.95)' : 'rgba(80, 18, 34, 0.95)',
+                border: privacyMode ? '1px solid rgba(0,229,255,0.55)' : '1px solid rgba(255,99,132,0.7)',
+                color: '#fff',
+                fontSize: '11px',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              {privacyMode ? '🔒 カメラ非表示' : '📷 カメラ表示中'}
+            </button>
+          )}
 
           {/* Camera error/loading overlay */}
           {!cameraReady && isCapturing && (
