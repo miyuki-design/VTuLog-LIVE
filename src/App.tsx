@@ -217,6 +217,105 @@ function getTouchDist(t1: { clientX: number; clientY: number }, t2: { clientX: n
 const CW = 1080
 const CH = 1920
 
+
+// ── Privacy standby card: pre-render once to keep live video compositing light ──
+// This is drawn INTO the captured canvas (not a UI overlay), so viewers see it.
+function makePrivacyStandbyCanvas(): HTMLCanvasElement {
+  const offscreen = document.createElement('canvas')
+  offscreen.width = CW
+  offscreen.height = CH
+  const ctx = offscreen.getContext('2d')
+  if (!ctx) return offscreen
+
+  // Quiet, broadcast-style background.
+  const background = ctx.createLinearGradient(0, 0, CW, CH)
+  background.addColorStop(0, '#10152E')
+  background.addColorStop(0.48, '#261A40')
+  background.addColorStop(1, '#11142B')
+  ctx.fillStyle = background
+  ctx.fillRect(0, 0, CW, CH)
+
+  const glow = (x: number, y: number, radius: number, rgb: string) => {
+    const g = ctx.createRadialGradient(x, y, 0, x, y, radius)
+    g.addColorStop(0, `rgba(${rgb},0.19)`)
+    g.addColorStop(1, `rgba(${rgb},0)`)
+    ctx.fillStyle = g
+    ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2)
+  }
+  glow(170, 420, 700, '123,92,250')
+  glow(870, 1350, 770, '47,199,224')
+
+  // Fine inner frame and a few small decorations.
+  ctx.strokeStyle = 'rgba(222,214,255,0.16)'
+  ctx.lineWidth = 2
+  ctx.strokeRect(62, 84, CW - 124, CH - 168)
+  ctx.strokeStyle = 'rgba(204,181,248,0.22)'
+  ctx.beginPath()
+  ctx.moveTo(106, 215)
+  ctx.lineTo(CW - 106, 215)
+  ctx.moveTo(106, CH - 210)
+  ctx.lineTo(CW - 106, CH - 210)
+  ctx.stroke()
+
+  // Top brand and mode label.
+  ctx.textBaseline = 'middle'
+  ctx.textAlign = 'left'
+  ctx.fillStyle = '#EEE9FF'
+  ctx.font = '700 42px -apple-system, BlinkMacSystemFont, sans-serif'
+  ctx.fillText('VTuLog LIVE', 108, 156)
+  ctx.fillStyle = '#BFC4E4'
+  ctx.textAlign = 'right'
+  ctx.font = '600 24px -apple-system, BlinkMacSystemFont, sans-serif'
+  ctx.fillText('PRIVACY MODE', CW - 108, 157)
+
+  // Soft rings around the camera-hidden emblem.
+  ctx.strokeStyle = 'rgba(195,180,255,0.22)'
+  ctx.lineWidth = 2
+  for (const radius of [115, 149]) {
+    ctx.beginPath()
+    ctx.arc(CW / 2, 675, radius, 0, Math.PI * 2)
+    ctx.stroke()
+  }
+  ctx.fillStyle = 'rgba(205,185,255,0.12)'
+  ctx.beginPath()
+  ctx.arc(CW / 2, 675, 98, 0, Math.PI * 2)
+  ctx.fill()
+
+  // A minimal crossed-out camera icon (not an emoji, consistent across devices).
+  ctx.strokeStyle = '#F2EFFF'
+  ctx.lineWidth = 9
+  ctx.lineJoin = 'round'
+  ctx.lineCap = 'round'
+  ctx.strokeRect(CW / 2 - 58, 641, 116, 72)
+  ctx.beginPath()
+  ctx.arc(CW / 2, 677, 20, 0, Math.PI * 2)
+  ctx.stroke()
+  ctx.strokeStyle = '#D3B4FF'
+  ctx.lineWidth = 10
+  ctx.beginPath()
+  ctx.moveTo(CW / 2 - 76, 744)
+  ctx.lineTo(CW / 2 + 76, 610)
+  ctx.stroke()
+
+  // The message is intentionally short and direct: not a connection error.
+  const fontFamily = '-apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif'
+  ctx.textAlign = 'center'
+  ctx.fillStyle = '#FFFFFF'
+  ctx.font = `700 65px ${fontFamily}`
+  ctx.fillText('映像を一時的に', CW / 2, 992)
+  ctx.fillText('非表示にしています', CW / 2, 1085)
+
+  ctx.fillStyle = '#C9C7E0'
+  ctx.font = `400 35px ${fontFamily}`
+  ctx.fillText('配信はそのまま続いています', CW / 2, 1198)
+
+  ctx.fillStyle = '#AAA9D1'
+  ctx.font = '500 27px -apple-system, BlinkMacSystemFont, sans-serif'
+  ctx.fillText('PLEASE STAND BY', CW / 2, CH - 148)
+
+  return offscreen
+}
+
 const SIGNALING_BASE_URL = 'https://vtulog-signal.miminoz0822.workers.dev'
 const SIGNALING_ROOM_ID = 'mimi-live'
 const GOOGLE_CLIENT_ID = '1076202528911-6letsd2va5jkp1tvf0hc9li0l2ebjtmc.apps.googleusercontent.com'
@@ -548,6 +647,7 @@ useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')!
+    const privacyStandbyCanvas = makePrivacyStandbyCanvas()
 
     const draw = () => {
       const video = hiddenVideoRef.current
@@ -555,8 +655,8 @@ useEffect(() => {
 
       // Only the canvas is broadcast. Never draw camera frames in privacy mode.
       if (privacyModeRef.current) {
-        ctx.fillStyle = '#0D0B1E'
-        ctx.fillRect(0, 0, CW, CH)
+        // No source-camera frame is used while privacy mode is active.
+        ctx.drawImage(privacyStandbyCanvas, 0, 0)
       } else if (video && video.readyState >= 2 && video.videoWidth > 0) {
         const vw = video.videoWidth, vh = video.videoHeight
         const r = Math.max(CW / vw, CH / vh)
@@ -2298,7 +2398,7 @@ useEffect(() => {
           )}
 
           {/* Camera error/loading overlay */}
-          {!cameraReady && isCapturing && (
+          {!cameraReady && isCapturing && !privacyMode && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3" style={{ background: '#0D0B1E', zIndex: 5 }}>
               {cameraError ? (
                 <>
