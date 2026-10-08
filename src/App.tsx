@@ -2579,7 +2579,7 @@ useEffect(() => {
   </button>
 )}
 
-{appState === 'idle' && (
+{appState === 'idle' && showStreamSettings && (
   <div
     style={{
       width: '100%',
@@ -2629,7 +2629,7 @@ useEffect(() => {
   </div>
 )}
           
-{appState === 'idle' && (
+{appState === 'idle' && showStreamSettings && (
   <button
     onClick={connectYouTube}
     style={{
