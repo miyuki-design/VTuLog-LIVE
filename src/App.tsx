@@ -1014,6 +1014,61 @@ useEffect(() => {
     clearInterval(interval)
   }
 }, [appState, fetchYouTubeLive])
+
+  // ── YouTube 配信終了確認 ──
+useEffect(() => {
+  if (youtubeLiveStatus !== 'ending') return
+
+  const accessToken = localStorage.getItem('youtube-access-token')
+  const broadcastId = localStorage.getItem('youtube-broadcast-id')
+
+  if (!accessToken || !broadcastId) {
+    console.warn('YouTube終了確認に必要な情報がありません')
+    return
+  }
+
+  let stopped = false
+
+  const checkYouTubeEnd = async () => {
+    try {
+      const response = await fetch(
+        `https://www.googleapis.com/youtube/v3/liveBroadcasts?part=status&id=${encodeURIComponent(broadcastId)}`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      )
+
+      if (!response.ok) {
+        console.error('YouTube終了確認失敗:', response.status)
+        return
+      }
+
+      const data = await response.json()
+
+      if (
+        !stopped &&
+        data.items?.[0]?.status?.lifeCycleStatus === 'complete'
+      ) {
+        setYoutubeLiveStatus('ended')
+      }
+    } catch (error) {
+      console.error('YouTube終了確認エラー:', error)
+    }
+  }
+
+  void checkYouTubeEnd()
+
+  const interval = setInterval(() => {
+    void checkYouTubeEnd()
+  }, 5000)
+
+  return () => {
+    stopped = true
+    clearInterval(interval)
+  }
+}, [youtubeLiveStatus])
   
   // ── Microphone ON / OFF ──
 const toggleMic = useCallback(() => {
