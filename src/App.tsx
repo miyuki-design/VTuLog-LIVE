@@ -1748,6 +1748,7 @@ await sender.setRemoteDescription(receiver.localDescription)
     if (!canvas) return
 
    setMicError(null)
+   setYoutubeLiveStatus('connecting')
 
 // 前回のLIVE終了通知をリセット
 await fetch(
