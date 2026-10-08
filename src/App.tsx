@@ -2559,7 +2559,7 @@ useEffect(() => {
   </div>
 )}
 
-{appState === 'idle' && showStreamSettings && (
+{appState === 'idle' && (
   <button
     onClick={() => setShowStreamSettings(prev => !prev)}
     style={{
