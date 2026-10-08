@@ -3,6 +3,13 @@ import { useLive2D, LIVE2D_CANVAS_SIZE, type Live2DDiagnostics, type NormalizedF
 
 type AppState = 'idle' | 'live'
 
+type YouTubeLiveStatus =
+  | 'idle'
+  | 'connecting'
+  | 'live'
+  | 'ending'
+  | 'ended'
+
 const PRESET_AVATARS = [
   { id: 'hana', name: 'ハナ', color: '#FF3FA4', hair: '#FF8BC8', eye: '#00E5FF' },
   { id: 'luna', name: 'ルナ', color: '#7B2FFF', hair: '#C9A0FF', eye: '#FFD700' },
@@ -291,6 +298,8 @@ export default function App() {
   // ── LIVE ──
   const [appState, setAppState] = useState<AppState>('idle')
   const [liveTime, setLiveTime] = useState(0)
+  const [youtubeLiveStatus, setYoutubeLiveStatus] =
+  useState<YouTubeLiveStatus>('idle')
 
   const liveStreamRef = useRef<MediaStream | null>(null)
   const audioStreamRef = useRef<MediaStream | null>(null)
