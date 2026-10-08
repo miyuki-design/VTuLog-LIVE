@@ -2206,7 +2206,13 @@ useEffect(() => {
         </div>
         
         {/* viewfinder */}
-        <div className="relative flex-1 mx-3 rounded-2xl overflow-hidden" style={{ minHeight: 0 }}>
+        <div
+          className="relative mx-auto rounded-2xl overflow-hidden shrink-0"
+          style={{
+          width: 'min(65%, 240px)',
+          aspectRatio: '9 / 16',
+          }}
+        >  
 
           {/* ── Canvas (camera + composited avatar) ── */}
           <canvas
