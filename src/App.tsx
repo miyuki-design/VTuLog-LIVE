@@ -2211,10 +2211,10 @@ useEffect(() => {
         <div
           className="relative mx-auto rounded-2xl overflow-hidden shrink-0"
           style={{
-          width: 'min(65%, 240px)',
+          width: 'min(48%, 180px)',
           aspectRatio: '9 / 16',
           }}
-        >  
+        >
 
           {/* ── Canvas (camera + composited avatar) ── */}
           <canvas
@@ -2538,7 +2538,7 @@ useEffect(() => {
       />
 
       <button
-        className="relative w-20 h-20 rounded-full btn-record flex items-center justify-center glow-pink"
+        className="relative w-16 h-16 rounded-full btn-record flex items-center justify-center glow-pink"
         onClick={startLive}
         disabled={!!cameraError}
         style={{ opacity: cameraError ? 0.45 : 1 }}
@@ -2584,9 +2584,9 @@ useEffect(() => {
   <div
     style={{
       width: '100%',
-      height: '220px',
-      flexShrink: 1,
-      minHeight: 0,
+      flex: '1 1 auto',
+      minHeight: '120px',
+      maxHeight: '360px',
       overflowY: 'auto',
       overflowX: 'hidden',
       WebkitOverflowScrolling: 'touch',
