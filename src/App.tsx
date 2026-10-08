@@ -647,7 +647,13 @@ useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')!
-    const privacyStandbyCanvas = makePrivacyStandbyCanvas()
+    // Privacy background: loaded once, then reused in each animation frame.
+    const privacyStandbyCanvas = makePrivacyStandbyCanvas() // fallback while loading / if missing
+    const privacyRoomImage = new Image()
+    let privacyRoomReady = false
+    privacyRoomImage.onload = () => { privacyRoomReady = true }
+    privacyRoomImage.onerror = () => { console.warn('Privacy background not found: /vampire-room.png') }
+    privacyRoomImage.src = '/vampire-room.png'
 
     const draw = () => {
       const video = hiddenVideoRef.current
@@ -656,7 +662,17 @@ useEffect(() => {
       // Only the canvas is broadcast. Never draw camera frames in privacy mode.
       if (privacyModeRef.current) {
         // No source-camera frame is used while privacy mode is active.
-        ctx.drawImage(privacyStandbyCanvas, 0, 0)
+        if (privacyRoomReady) {
+          // Scale to fill the portrait canvas without stretching the artwork.
+          const iw = privacyRoomImage.naturalWidth
+          const ih = privacyRoomImage.naturalHeight
+          const ratio = Math.max(CW / iw, CH / ih)
+          const dw = iw * ratio
+          const dh = ih * ratio
+          ctx.drawImage(privacyRoomImage, (CW - dw) / 2, (CH - dh) / 2, dw, dh)
+        } else {
+          ctx.drawImage(privacyStandbyCanvas, 0, 0)
+        }
       } else if (video && video.readyState >= 2 && video.videoWidth > 0) {
         const vw = video.videoWidth, vh = video.videoHeight
         const r = Math.max(CW / vw, CH / vh)
