@@ -736,6 +736,8 @@ const fetchYouTubeLive = useCallback(async (silent = false) => {
         item.snippet?.liveChatId
     )
 
+    if (liveBroadcast) setYoutubeLiveStatus('live')
+
     if (!liveBroadcast) {
       if (!silent) {
         alert('現在LIVE中の配信が見つかりません')
