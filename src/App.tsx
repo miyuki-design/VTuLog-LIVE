@@ -1826,7 +1826,9 @@ if (latestWhipUrl) {
 
     // ── Stop LIVE ──
  const stopLive = useCallback(async () => {
-  // 相手端末へLIVE終了を通知
+ setYoutubeLiveStatus('ending')
+
+   // 相手端末へLIVE終了を通知
   if (rtcRole) {
     void fetch(
       `${SIGNALING_BASE_URL}/rooms/${encodeURIComponent(SIGNALING_ROOM_ID)}/end`,
