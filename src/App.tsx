@@ -374,6 +374,7 @@ const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // ── UI ──
   const [showStreamSettings, setShowStreamSettings] = useState(false)
+  const [streamSettingsPage, setStreamSettingsPage] = useState<'menu' | 'youtube' | 'twitch'>('menu')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [micError, setMicError] = useState<string | null>(null)
   const [videoTrackInfo, setVideoTrackInfo] = useState('')
@@ -2565,7 +2566,10 @@ useEffect(() => {
 
 {appState === 'idle' && (
   <button
-    onClick={() => setShowStreamSettings(prev => !prev)}
+    onClick={() => {
+      setShowStreamSettings(prev => !prev)
+      setStreamSettingsPage('menu')
+    }}
     style={{
       width: '100%',
       marginTop: '16px',
@@ -2585,6 +2589,7 @@ useEffect(() => {
 
 {appState === 'idle' && showStreamSettings && (
   <div
+    key={streamSettingsPage}
     style={{
       width: '100%',
       flex: '1 1 auto',
@@ -2598,8 +2603,67 @@ useEffect(() => {
       paddingRight: '4px',
     }}
   >
-          
-{appState === 'idle' && showStreamSettings && (
+    {streamSettingsPage === 'menu' && (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '4px' }}>
+        <button
+          onClick={() => setStreamSettingsPage('youtube')}
+          style={{
+            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '14px 16px', borderRadius: '12px', cursor: 'pointer',
+            border: '1px solid rgba(255,75,75,0.35)',
+            background: 'rgba(255,75,75,0.08)', color: '#fff',
+            fontSize: '14px', fontWeight: 600,
+          }}
+        >
+          <span>▶ YouTube</span><span aria-hidden="true">›</span>
+        </button>
+        <button
+          onClick={() => setStreamSettingsPage('twitch')}
+          style={{
+            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '14px 16px', borderRadius: '12px', cursor: 'pointer',
+            border: '1px solid rgba(145,70,255,0.40)',
+            background: 'rgba(145,70,255,0.10)', color: '#fff',
+            fontSize: '14px', fontWeight: 600,
+          }}
+        >
+          <span>🟣 Twitch <span style={{ fontSize: '11px', color: 'var(--color-muted)' }}>（今後対応予定）</span></span>
+          <span aria-hidden="true">›</span>
+        </button>
+      </div>
+    )}
+
+    {streamSettingsPage !== 'menu' && (
+      <button
+        onClick={() => setStreamSettingsPage('menu')}
+        style={{
+          width: '100%', padding: '10px 12px', borderRadius: '10px',
+          border: '1px solid rgba(255,255,255,0.15)',
+          background: 'rgba(255,255,255,0.05)', color: 'var(--color-cyan)',
+          textAlign: 'left', fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+        }}
+      >
+        ← 配信設定に戻る
+      </button>
+    )}
+
+    {streamSettingsPage === 'twitch' && (
+      <div style={{ marginTop: '12px', padding: '16px', borderRadius: '14px',
+        background: 'rgba(145,70,255,0.08)', border: '1px solid rgba(145,70,255,0.25)' }}>
+        <div style={{ color: '#fff', fontSize: '14px', fontWeight: 600 }}>🟣 Twitch</div>
+        <p style={{ marginTop: '8px', fontSize: '12px', color: 'var(--color-muted)', lineHeight: 1.6 }}>
+          Twitch配信機能は今後追加予定です。
+        </p>
+      </div>
+    )}
+
+    {streamSettingsPage === 'youtube' && (
+      <p style={{ marginTop: '12px', fontSize: '13px', fontWeight: 600, color: '#fff' }}>
+        ▶ YouTube 設定
+      </p>
+    )}
+
+{streamSettingsPage === 'youtube' && (
   <div
     style={{
       width: '100%',
@@ -2649,10 +2713,11 @@ useEffect(() => {
   </div>
 )}
           
-{appState === 'idle' && showStreamSettings && (
+{streamSettingsPage === 'youtube' && (
   <button
     onClick={connectYouTube}
     style={{
+      width: '100%',
       marginTop: '12px',
       padding: '10px 18px',
       borderRadius: '999px',
@@ -2668,10 +2733,11 @@ useEffect(() => {
   </button>
 )}
 
-{appState === 'idle' && showStreamSettings && (
+{streamSettingsPage === 'youtube' && (
   <button
     onClick={() => void fetchYouTubeLive(false)}
     style={{
+      width: '100%',
       marginTop: '8px',
       padding: '10px 18px',
       borderRadius: '999px',
@@ -2687,7 +2753,7 @@ useEffect(() => {
   </button>
 )}
 
-{appState === 'idle' && showStreamSettings && (
+{streamSettingsPage === 'youtube' && (
   <input
     type="text"
     value={youtubeTitle}
@@ -2708,10 +2774,11 @@ useEffect(() => {
   />
 )}
           
-{appState === 'idle' && showStreamSettings && (
+{streamSettingsPage === 'youtube' && (
   <button
     onClick={createYouTubeTestBroadcast}
     style={{
+      width: '100%',
       marginTop: '8px',
       padding: '10px 18px',
       borderRadius: '999px',
@@ -2727,10 +2794,11 @@ useEffect(() => {
   </button>
 )}
 
-{appState === 'idle' && showStreamSettings && (
+{streamSettingsPage === 'youtube' && (
   <button
     onClick={fetchYouTubeLiveStreams}
     style={{
+      width: '100%',
       marginTop: '8px',
       padding: '10px 18px',
       borderRadius: '999px',
@@ -2746,10 +2814,11 @@ useEffect(() => {
   </button>
 )}
 
-{appState === 'idle' && showStreamSettings && (
+{streamSettingsPage === 'youtube' && (
   <button
     onClick={bindYouTubeBroadcast}
     style={{
+      width: '100%',
       marginTop: '8px',
       padding: '10px 18px',
       borderRadius: '999px',
@@ -2766,7 +2835,7 @@ useEffect(() => {
 )}
 
 {/* YouTube LIVE URL */}
-{appState === 'idle' && showStreamSettings && (
+{streamSettingsPage === 'youtube' && (
   <button
     onClick={async () => {
       const broadcastId = localStorage.getItem('youtube-broadcast-id')
