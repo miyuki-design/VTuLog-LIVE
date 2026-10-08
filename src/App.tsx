@@ -2207,14 +2207,17 @@ useEffect(() => {
           
         </div>
         
-        {/* viewfinder */}
-        <div
-          className="relative mx-auto rounded-2xl overflow-hidden shrink-0"
-          style={{
-          width: 'min(48%, 180px)',
+       {/* viewfinder */}
+      <div
+        className="relative mx-auto rounded-2xl overflow-hidden shrink-0"
+        style={{
+        width: showStreamSettings && appState === 'idle'
+          ? 'min(48%, 180px)'
+          : 'min(65%, 240px)',
           aspectRatio: '9 / 16',
-          }}
-        >
+          transition: 'width 0.25s ease',
+        }}
+      >
 
           {/* ── Canvas (camera + composited avatar) ── */}
           <canvas
