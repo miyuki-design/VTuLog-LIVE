@@ -2764,6 +2764,44 @@ useEffect(() => {
     🔗 YouTube配信枠と配信先を紐づけ
   </button>
 )}
+
+{/* YouTube LIVE URL */}
+{appState === 'idle' && showStreamSettings && (
+  <button
+    onClick={async () => {
+      const broadcastId = localStorage.getItem('youtube-broadcast-id')
+
+      if (!broadcastId) {
+        alert('先にYouTube配信枠を作成してください')
+        return
+      }
+
+      const url = `https://www.youtube.com/watch?v=${broadcastId}`
+
+      try {
+        await navigator.clipboard.writeText(url)
+        alert(`YouTube LIVEのURLをコピーしました！\n\n${url}`)
+      } catch {
+        window.prompt('以下のURLをコピーしてください', url)
+      }
+    }}
+    style={{
+      width: '100%',
+      marginTop: '8px',
+      padding: '12px',
+      borderRadius: '999px',
+      border: '1px solid rgba(0,229,255,0.3)',
+      background: 'rgba(0,229,255,0.08)',
+      color: 'var(--color-cyan)',
+      fontSize: '13px',
+      fontWeight: 600,
+      cursor: 'pointer',
+    }}
+  >
+    📋 YouTube LIVEのURLをコピー
+  </button>
+)}
+    
   </div>
 )}
           
