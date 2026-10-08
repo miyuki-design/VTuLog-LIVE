@@ -2427,6 +2427,23 @@ useEffect(() => {
         {/* controls */}
         <div className="shrink-0 px-5 pt-3 pb-6">
 
+        {/* YouTube 配信状態 */}
+<div
+  style={{
+    textAlign: 'center',
+    padding: '8px 12px',
+    marginBottom: '12px',
+    borderRadius: '10px',
+    background: 'rgba(255,255,255,0.06)',
+    border: '1px solid rgba(255,255,255,0.12)',
+    fontSize: '12px',
+    fontWeight: 600,
+    color: '#FFFFFF',
+  }}
+>
+  {youtubeStatusLabel[youtubeLiveStatus]}
+</div>
+
           {appState === 'idle' && (
         <div className="flex flex-col items-center gap-3 animate-fade-in">
         <p
