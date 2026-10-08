@@ -2133,7 +2133,7 @@ useEffect(() => {
 
       {/* phone frame */}
       <div
-      className="relative overflow-y-auto overflow-x-hidden flex flex-col"
+      className="relative overflow-hidden flex flex-col"
         style={{
           width: 'min(390px, 100vw)',
           height: 'min(844px, 100vh)',
@@ -2497,7 +2497,7 @@ useEffect(() => {
         )}
 
         {/* controls */}
-        <div className="shrink-0 px-5 pt-3 pb-6">
+<div className="flex-1 min-h-0 overflow-hidden flex flex-col px-5 pt-3 pb-6">
 
         {/* YouTube 配信状態 */}
 <div
@@ -2580,6 +2580,22 @@ useEffect(() => {
   </button>
 )}
 
+{appState === 'idle' && showStreamSettings && (
+  <div
+    style={{
+      width: '100%',
+      height: '220px',
+      flexShrink: 1,
+      minHeight: 0,
+      overflowY: 'auto',
+      overflowX: 'hidden',
+      WebkitOverflowScrolling: 'touch',
+      overscrollBehavior: 'contain',
+      marginTop: '8px',
+      paddingRight: '4px',
+    }}
+  >
+          
 {appState === 'idle' && showStreamSettings && (
   <div
     style={{
@@ -2744,6 +2760,8 @@ useEffect(() => {
   >
     🔗 YouTube配信枠と配信先を紐づけ
   </button>
+)}
+  </div>
 )}
           
 {youtubeComments.length > 0 && (
