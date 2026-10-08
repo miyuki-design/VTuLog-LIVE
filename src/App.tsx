@@ -373,6 +373,7 @@ const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const live2dFolderInputRef = useRef<HTMLInputElement>(null)
 
   // ── UI ──
+  const [showStreamSettings, setShowStreamSettings] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [micError, setMicError] = useState<string | null>(null)
   const [videoTrackInfo, setVideoTrackInfo] = useState('')
@@ -2558,6 +2559,26 @@ useEffect(() => {
   </div>
 )}
 
+{appState === 'idle' && showStreamSettings && (
+  <button
+    onClick={() => setShowStreamSettings(prev => !prev)}
+    style={{
+      width: '100%',
+      marginTop: '16px',
+      padding: '12px',
+      borderRadius: '12px',
+      border: '1px solid rgba(0,229,255,0.3)',
+      background: 'rgba(0,229,255,0.06)',
+      color: 'var(--color-cyan)',
+      fontSize: '13px',
+      fontWeight: 600,
+      cursor: 'pointer',
+    }}
+  >
+    ⚙️ 配信設定 {showStreamSettings ? '▲' : '▼'}
+  </button>
+)}
+
 {appState === 'idle' && (
   <div
     style={{
@@ -2627,7 +2648,7 @@ useEffect(() => {
   </button>
 )}
 
-{appState === 'idle' && (
+{appState === 'idle' && showStreamSettings && (
   <button
     onClick={() => void fetchYouTubeLive(false)}
     style={{
@@ -2646,7 +2667,7 @@ useEffect(() => {
   </button>
 )}
 
-{appState === 'idle' && (
+{appState === 'idle' && showStreamSettings && (
   <input
     type="text"
     value={youtubeTitle}
@@ -2667,7 +2688,7 @@ useEffect(() => {
   />
 )}
           
-{appState === 'idle' && (
+{appState === 'idle' && showStreamSettings && (
   <button
     onClick={createYouTubeTestBroadcast}
     style={{
@@ -2686,7 +2707,7 @@ useEffect(() => {
   </button>
 )}
 
-{appState === 'idle' && (
+{appState === 'idle' && showStreamSettings && (
   <button
     onClick={fetchYouTubeLiveStreams}
     style={{
@@ -2705,7 +2726,7 @@ useEffect(() => {
   </button>
 )}
 
-{appState === 'idle' && (
+{appState === 'idle' && showStreamSettings && (
   <button
     onClick={bindYouTubeBroadcast}
     style={{
