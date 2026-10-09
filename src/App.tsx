@@ -2830,9 +2830,24 @@ useEffect(() => {
           background: 'rgba(0,0,0,0.18)', color: '#fff', fontSize: '12px', lineHeight: 1.8 }}>
           <div>💜 Twitch配信：対応済み</div>
           <div>🔒 配信先：Oracle Cloud側で管理</div>
-          <div style={{ color: 'var(--color-muted)', marginTop: '6px' }}>
-            アプリからの配信先切り替えは準備中です。現在の送信先はここでは変更できません。
-          </div>
+          <a
+  href="https://vtulog-control-test.miminoz0822.workers.dev/"
+  target="_blank"
+  rel="noopener noreferrer"
+  style={{
+    display: 'block',
+    marginTop: '10px',
+    padding: '12px',
+    borderRadius: '10px',
+    background: '#9146FF',
+    color: '#fff',
+    textAlign: 'center',
+    fontWeight: 600,
+    textDecoration: 'none',
+  }}
+>
+  📺 YouTube ／ 💜 Twitch 配信先を変更
+</a>
         </div>
         <p style={{ marginTop: '10px', fontSize: '11px', color: 'var(--color-muted)', lineHeight: 1.6 }}>
           ストリームキーはアプリに入力しないでください。安全な切り替えにはサーバー側の認証付きAPIが必要です。
