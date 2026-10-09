@@ -7,18 +7,24 @@ interface Env {
   ACCESS_AUD: string;
 }
 
+function accessCookie(request: Request): string | null {
+  const cookie = request.headers.get('Cookie') ?? '';
+  const part = cookie.split(';').map(x => x.trim()).find(x => x.startsWith('CF_Authorization='));
+  if (!part) return null;
+  try { return decodeURIComponent(part.slice('CF_Authorization='.length)); }
+  catch { return null; }
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
-
     if (url.pathname === '/api/health') {
       return Response.json({ success: true, service: 'vtulog-live', message: 'Worker is running' });
     }
-
     if (url.pathname !== '/api/target') return new Response('Not Found', { status: 404 });
     if (!['GET', 'POST'].includes(request.method)) return new Response('Method Not Allowed', { status: 405 });
 
-    const token = request.headers.get('Cf-Access-Jwt-Assertion');
+    const token = request.headers.get('Cf-Access-Jwt-Assertion') || accessCookie(request);
     if (!token || !env.ACCESS_TEAM_DOMAIN || !env.ACCESS_AUD) {
       return Response.json({ success: false, error: 'Authentication required' }, { status: 403 });
     }
@@ -30,7 +36,6 @@ export default {
       return Response.json({ success: false, error: 'Invalid authentication' }, { status: 403 });
     }
 
-    // After a top-level Access login, return to the PWA instead of showing raw JSON.
     if (request.method === 'GET' && url.searchParams.get('login') === '1') {
       return Response.redirect(`${url.origin}/`, 303);
     }
