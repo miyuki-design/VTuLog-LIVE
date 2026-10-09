@@ -3,6 +3,13 @@
   "name": "vtulog-live",
   "compatibility_date": "2026-10-09",
   "main": "./worker/index.ts",
+  "previews": {},
+  "vpc_services": [
+  {
+    "binding": "CONTROL_API",
+    "service_id": "01a11d3f-d153-7803-921a-feb09129d979"
+  }
+],
   "observability": {
     "enabled": true
   },
