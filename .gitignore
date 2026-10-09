@@ -19,3 +19,11 @@ logs/
 # beside it.
 /.plugins/
 /.opencode-skills/
+# Cloudflare local files
+.wrangler/
+
+# Local build output
+dist/
+
+# Unused npm lockfile (pnpm is used)
+package-lock.json
