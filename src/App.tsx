@@ -478,7 +478,7 @@ const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // ── UI ──
   const [showStreamSettings, setShowStreamSettings] = useState(false)
-  const [streamSettingsPage, setStreamSettingsPage] = useState<'menu' | 'youtube' | 'twitch'>('menu')
+  const [streamSettingsPage, setStreamSettingsPage] = useState<'menu' | 'youtube' | 'twitch' | 'target'>('menu')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [micError, setMicError] = useState<string | null>(null)
   const [videoTrackInfo, setVideoTrackInfo] = useState('')
@@ -2802,6 +2802,19 @@ useEffect(() => {
           <span>🟣 Twitch <span style={{ fontSize: '11px', color: '#b9a0ff' }}>（配信接続確認済み）</span></span>
           <span aria-hidden="true">›</span>
         </button>
+        <button
+          type="button"
+          onClick={() => setStreamSettingsPage('target')}
+          style={{
+            width: '100%', padding: '14px 16px', borderRadius: '12px',
+            cursor: 'pointer', fontSize: '14px', fontWeight: 600,
+            textAlign: 'left', color: '#fff',
+            border: '1px solid rgba(0,229,255,0.35)',
+            background: 'rgba(0,229,255,0.08)',
+          }}
+        >
+          📺 YouTube ／ 💜 Twitch 配信先を変更
+        </button>
       </div>
     )}
 
@@ -2817,6 +2830,26 @@ useEffect(() => {
       >
         ← 配信設定に戻る
       </button>
+    )}
+
+    {streamSettingsPage === 'target' && (
+      <div style={{ marginTop: '12px' }}>
+        <p style={{ color: '#fff', fontSize: '13px', marginBottom: '8px' }}>
+          配信先の変更（配信開始前に選択）
+        </p>
+        <iframe
+          title="YouTube／Twitch 配信先設定"
+          src="https://vtulog-control-test.miminoz0822.workers.dev/"
+          style={{
+            display: 'block', width: '100%', height: '300px',
+            border: '1px solid rgba(255,255,255,0.2)', borderRadius: '12px',
+            background: '#151326',
+          }}
+        />
+        <p style={{ marginTop: '8px', color: 'var(--color-muted)', fontSize: '11px', lineHeight: 1.6 }}>
+          認証画面が表示されない場合、ブラウザの埋め込み制限が原因の可能性があります。
+        </p>
+      </div>
     )}
 
     {streamSettingsPage === 'twitch' && (
