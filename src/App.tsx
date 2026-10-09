@@ -479,6 +479,9 @@ const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   // ── UI ──
   const [showStreamSettings, setShowStreamSettings] = useState(false)
   const [streamSettingsPage, setStreamSettingsPage] = useState<'menu' | 'youtube' | 'twitch' | 'target'>('menu')
+  const [streamTarget, setStreamTarget] = useState<'youtube' | 'twitch' | null>(null)
+  const [streamTargetBusy, setStreamTargetBusy] = useState(false)
+  const [streamTargetMessage, setStreamTargetMessage] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [micError, setMicError] = useState<string | null>(null)
   const [videoTrackInfo, setVideoTrackInfo] = useState('')
@@ -488,6 +491,54 @@ const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 >([])
   const [youtubeTitle, setYoutubeTitle] = useState('VTuLog LIVE')
   
+  // The stream keys remain on Oracle Cloud; only the selected destination is sent.
+  const loadStreamTarget = useCallback(async () => {
+    setStreamTargetBusy(true)
+    setStreamTargetMessage('')
+    try {
+      const response = await fetch('/api/target', { credentials: 'same-origin', cache: 'no-store' })
+      const data = await response.json()
+      if (!response.ok || !['youtube', 'twitch'].includes(data.target)) {
+        throw new Error(data.error ?? `HTTP ${response.status}`)
+      }
+      setStreamTarget(data.target)
+    } catch (error) {
+      setStreamTarget(null)
+      setStreamTargetMessage(`配信先を取得できません：${error instanceof Error ? error.message : String(error)}`)
+    } finally {
+      setStreamTargetBusy(false)
+    }
+  }, [])
+
+  const updateStreamTarget = useCallback(async (target: 'youtube' | 'twitch') => {
+    if (appState === 'live' || streamTargetBusy) return
+    if (!window.confirm(`配信先を${target === 'youtube' ? 'YouTube' : 'Twitch'}に変更しますか？`)) return
+    setStreamTargetBusy(true)
+    setStreamTargetMessage('')
+    try {
+      const response = await fetch('/api/target', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target }),
+      })
+      const data = await response.json()
+      if (!response.ok || data.target !== target) {
+        throw new Error(data.error ?? `HTTP ${response.status}`)
+      }
+      setStreamTarget(target)
+      setStreamTargetMessage(`${target === 'youtube' ? 'YouTube' : 'Twitch'}に変更しました`)
+    } catch (error) {
+      setStreamTargetMessage(`切り替えに失敗しました：${error instanceof Error ? error.message : String(error)}`)
+    } finally {
+      setStreamTargetBusy(false)
+    }
+  }, [appState, streamTargetBusy])
+
+  useEffect(() => {
+    if (showStreamSettings && streamSettingsPage === 'target') void loadStreamTarget()
+  }, [showStreamSettings, streamSettingsPage, loadStreamTarget])
+
   const isCapturing = true
   const isLive = appState === 'live'
   const youtubeStatusLabel: Record<YouTubeLiveStatus, string> = {
@@ -2833,22 +2884,39 @@ useEffect(() => {
     )}
 
     {streamSettingsPage === 'target' && (
-      <div style={{ marginTop: '12px' }}>
-        <p style={{ color: '#fff', fontSize: '13px', marginBottom: '8px' }}>
-          配信先の変更（配信開始前に選択）
+      <div style={{ marginTop: '12px', padding: '14px', borderRadius: '14px', background: 'rgba(255,255,255,0.05)' }}>
+        <p style={{ color: '#fff', fontSize: '13px', fontWeight: 600, marginBottom: '10px' }}>
+          配信先を選択（配信開始前）
         </p>
-        <iframe
-          title="YouTube／Twitch 配信先設定"
-          src="https://vtulog-control-test.miminoz0822.workers.dev/"
-          style={{
-            display: 'block', width: '100%', height: '300px',
-            border: '1px solid rgba(255,255,255,0.2)', borderRadius: '12px',
-            background: '#151326',
-          }}
-        />
-        <p style={{ marginTop: '8px', color: 'var(--color-muted)', fontSize: '11px', lineHeight: 1.6 }}>
-          認証画面が表示されない場合、ブラウザの埋め込み制限が原因の可能性があります。
+        <p style={{ fontSize: '12px', color: 'var(--color-muted)', marginBottom: '12px' }}>
+          現在の配信先：{streamTarget === 'youtube' ? '📺 YouTube' : streamTarget === 'twitch' ? '💜 Twitch' : '未取得'}
         </p>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          {(['youtube', 'twitch'] as const).map(target => (
+            <button
+              key={target}
+              type="button"
+              disabled={streamTargetBusy || isLive}
+              onClick={() => void updateStreamTarget(target)}
+              style={{
+                flex: 1, padding: '13px 8px', borderRadius: '10px',
+                background: target === 'youtube' ? '#C72D33' : '#9146FF',
+                color: '#fff', fontWeight: 700, fontSize: '13px',
+                opacity: streamTargetBusy || isLive ? 0.5 : 1,
+                border: streamTarget === target ? '2px solid #fff' : '2px solid transparent',
+                cursor: streamTargetBusy || isLive ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {target === 'youtube' ? '📺 YouTube' : '💜 Twitch'}
+              {streamTarget === target ? ' ✓' : ''}
+            </button>
+          ))}
+        </div>
+        {streamTargetMessage && (
+          <p role="status" style={{ marginTop: '10px', color: '#fff', fontSize: '12px', overflowWrap: 'anywhere' }}>
+            {streamTargetMessage}
+          </p>
+        )}
       </div>
     )}
 
