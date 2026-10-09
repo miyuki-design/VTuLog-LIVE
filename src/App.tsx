@@ -2830,24 +2830,39 @@ useEffect(() => {
           background: 'rgba(0,0,0,0.18)', color: '#fff', fontSize: '12px', lineHeight: 1.8 }}>
           <div>💜 Twitch配信：対応済み</div>
           <div>🔒 配信先：Oracle Cloud側で管理</div>
-          <a
-  href="https://vtulog-control-test.miminoz0822.workers.dev/"
-  target="_blank"
-  rel="noopener noreferrer"
+         <button
+  type="button"
+  onClick={async () => {
+    try {
+      const response = await fetch(
+        'https://vtulog-control-test.miminoz0822.workers.dev/target',
+        {
+          method: 'GET',
+          credentials: 'include',
+        }
+      )
+
+      const data = await response.json()
+      alert(`HTTP ${response.status}\n${JSON.stringify(data)}`)
+    } catch (error) {
+      alert(`通信エラー：${String(error)}`)
+    }
+  }}
   style={{
     display: 'block',
+    width: '100%',
     marginTop: '10px',
     padding: '12px',
     borderRadius: '10px',
     background: '#9146FF',
     color: '#fff',
-    textAlign: 'center',
     fontWeight: 600,
-    textDecoration: 'none',
+    border: 'none',
+    cursor: 'pointer',
   }}
 >
-  📺 YouTube ／ 💜 Twitch 配信先を変更
-</a>
+  🔐 認証付き通信テスト
+</button>
         </div>
         <p style={{ marginTop: '10px', fontSize: '11px', color: 'var(--color-muted)', lineHeight: 1.6 }}>
           ストリームキーはアプリに入力しないでください。安全な切り替えにはサーバー側の認証付きAPIが必要です。
