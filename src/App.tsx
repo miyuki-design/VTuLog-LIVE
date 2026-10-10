@@ -510,6 +510,9 @@ const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 >([])
   const [youtubeTitle, setYoutubeTitle] = useState('VTuLog LIVE')
 
+  // 視聴中の人数。取得不可・配信未検出はnull（0人と区別する）。
+  const [viewerCount, setViewerCount] = useState<number | null>(null)
+
   // ── Twitchコメント（匿名・読み取り専用IRC） ──
   const [twitchChannel, setTwitchChannel] = useState(() =>
     localStorage.getItem('vtulog-twitch-channel') ?? ''
@@ -826,6 +829,75 @@ const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
       }
     }
   }, [appState, rtcRole, streamTarget, twitchChannel, showStreamSettings, streamSettingsPage])
+
+  // ── Twitch / YouTube 同時視聴者数 ──
+  // 映像への合成はしない。配信者側の操作画面だけに表示する。
+  useEffect(() => {
+    setViewerCount(null)
+    if (appState !== 'live' || rtcRole === 'receiver' || !streamTarget) return
+
+    let disposed = false
+    let busy = false
+    const refreshViewerCount = async () => {
+      if (disposed || busy) return
+      busy = true
+      try {
+        let count: number | null = null
+        if (streamTarget === 'twitch') {
+          // タイトル変更に使用する既存のTwitch認証情報を再利用。
+          const login = (twitchConnectedLogin || twitchChannel).trim().replace(/^@/, '').toLowerCase()
+          if (twitchAuthToken && twitchClientId.trim() && /^[a-z0-9_]{3,25}$/.test(login)) {
+            const response = await fetch(
+              `https://api.twitch.tv/helix/streams?user_login=${encodeURIComponent(login)}`,
+              { headers: {
+                Authorization: `Bearer ${twitchAuthToken}`,
+                'Client-Id': twitchClientId.trim(),
+              }, cache: 'no-store' },
+            )
+            if (!response.ok) throw new Error(`Twitch ${response.status}`)
+            const data = await response.json()
+            // APIが正常に返した配信なしは0人。通信エラーは不明。
+            count = data.data?.length ? data.data[0].viewer_count : 0
+          }
+        } else {
+          const token = localStorage.getItem('youtube-access-token')
+          if (token) {
+            const broadcasts = await fetch(
+              'https://www.googleapis.com/youtube/v3/liveBroadcasts?part=id,status&broadcastStatus=active&broadcastType=all&maxResults=10',
+              { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' },
+            )
+            if (!broadcasts.ok) throw new Error(`YouTube ${broadcasts.status}`)
+            const broadcastData = await broadcasts.json()
+            const liveId: string | undefined = broadcastData.items?.find(
+              (item: { id?: string; status?: { lifeCycleStatus?: string } }) =>
+                item.status?.lifeCycleStatus === 'live',
+            )?.id
+            if (liveId) {
+              const videos = await fetch(
+                `https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails&id=${encodeURIComponent(liveId)}`,
+                { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' },
+              )
+              if (!videos.ok) throw new Error(`YouTube video ${videos.status}`)
+              const videoData = await videos.json()
+              const raw = videoData.items?.[0]?.liveStreamingDetails?.concurrentViewers
+              // YouTubeは0人や非公開設定時にフィールドを省くことがある。
+              if (raw !== undefined && raw !== null) count = Number(raw)
+            }
+          }
+        }
+        if (!disposed) setViewerCount(typeof count === 'number' && Number.isFinite(count) && count >= 0 ? count : null)
+      } catch (error) {
+        console.warn('視聴者数を取得できません:', error)
+        if (!disposed) setViewerCount(null)
+      } finally {
+        busy = false
+      }
+    }
+
+    void refreshViewerCount()
+    const interval = window.setInterval(() => void refreshViewerCount(), 30000)
+    return () => { disposed = true; window.clearInterval(interval) }
+  }, [appState, rtcRole, streamTarget, twitchAuthToken, twitchClientId, twitchConnectedLogin, twitchChannel])
 
   const twitchChatStatusLabel = {
     idle: '待機中',
@@ -2912,6 +2984,12 @@ useEffect(() => {
     >
       LIVE {formatTime(liveTime)}
     </span>
+    {rtcRole !== 'receiver' && (
+      <span style={{ fontSize: '12px', color: '#fff', whiteSpace: 'nowrap' }}
+        title="同時視聴者数（約30秒ごとに更新）">
+        👁 {viewerCount === null ? '—' : viewerCount}
+      </span>
+    )}
   </div>
 )}  
           {/* ── Avatar controls (scale + picker trigger) ── */}
