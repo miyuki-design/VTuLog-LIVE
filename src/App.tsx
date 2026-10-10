@@ -321,6 +321,11 @@ const SIGNALING_ROOM_ID = 'mimi-live'
 const GOOGLE_CLIENT_ID = '1076202528911-6letsd2va5jkp1tvf0hc9li0l2ebjtmc.apps.googleusercontent.com'
 const GOOGLE_REDIRECT_URI = `${window.location.origin}/oauth/callback`
 const YOUTUBE_SCOPE = 'https://www.googleapis.com/auth/youtube'
+// Twitchタイトル変更には channel:manage:broadcast のユーザー承認が必須。
+// Client ID は公開情報で、ストリームキーやClient Secretは不要。
+const TWITCH_SCOPE = 'channel:manage:broadcast'
+const TWITCH_TOKEN_KEY = 'vtulog-twitch-title-access-token'
+const TWITCH_OAUTH_PENDING_KEY = 'vtulog-twitch-title-oauth-pending'
 
 async function getIceServers(): Promise<RTCIceServer[]> {
   const response = await fetch(
@@ -508,7 +513,147 @@ const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   useEffect(() => {
     localStorage.setItem('vtulog-twitch-channel', twitchChannel)
   }, [twitchChannel])
-  
+
+  // ── Twitchタイトル設定（追加OAuthはタイトル変更時のみ必要） ──
+  const [twitchClientId, setTwitchClientId] = useState(() =>
+    localStorage.getItem('vtulog-twitch-client-id') ?? ''
+  )
+  const [twitchAuthToken, setTwitchAuthToken] = useState(() =>
+    localStorage.getItem(TWITCH_TOKEN_KEY) ?? ''
+  )
+  const [twitchBroadcasterId, setTwitchBroadcasterId] = useState('')
+  const [twitchConnectedLogin, setTwitchConnectedLogin] = useState('')
+  const [twitchTitle, setTwitchTitle] = useState(() =>
+    localStorage.getItem('vtulog-twitch-title') ?? ''
+  )
+  const [twitchTitleBusy, setTwitchTitleBusy] = useState(false)
+  const [twitchTitleMessage, setTwitchTitleMessage] = useState('')
+  const [twitchAuthMessage, setTwitchAuthMessage] = useState('')
+
+  useEffect(() => {
+    localStorage.setItem('vtulog-twitch-client-id', twitchClientId)
+  }, [twitchClientId])
+  useEffect(() => {
+    localStorage.setItem('vtulog-twitch-title', twitchTitle)
+  }, [twitchTitle])
+
+  const disconnectTwitchTitle = useCallback(() => {
+    localStorage.removeItem(TWITCH_TOKEN_KEY)
+    setTwitchAuthToken('')
+    setTwitchBroadcasterId('')
+    setTwitchConnectedLogin('')
+    setTwitchAuthMessage('タイトル変更用のTwitch連携を解除しました')
+  }, [])
+
+  const connectTwitchTitle = useCallback(() => {
+    const clientId = twitchClientId.trim()
+    if (!/^[a-z0-9]{10,64}$/i.test(clientId)) {
+      setTwitchAuthMessage('Twitch開発者コンソールのClient IDを入力してください')
+      return
+    }
+    // Twitchへは配信アプリ自身のURLへ戻る。これと同じURLをTwitchに登録する。
+    const redirectUri = `${window.location.origin}${window.location.pathname}`
+    const state = `vtulog-twitch-${crypto.randomUUID()}`
+    localStorage.setItem(TWITCH_OAUTH_PENDING_KEY, JSON.stringify({ state, startedAt: Date.now() }))
+    const params = new URLSearchParams({
+      response_type: 'token',
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      scope: TWITCH_SCOPE,
+      state,
+    })
+    window.location.assign(`https://id.twitch.tv/oauth2/authorize?${params.toString()}`)
+  }, [twitchClientId])
+
+  const validateTwitchTitleToken = useCallback(async () => {
+    if (!twitchAuthToken) {
+      setTwitchBroadcasterId('')
+      setTwitchConnectedLogin('')
+      return
+    }
+    try {
+      const response = await fetch('https://id.twitch.tv/oauth2/validate', {
+        headers: { Authorization: `OAuth ${twitchAuthToken}` },
+      })
+      if (response.status === 401) {
+        localStorage.removeItem(TWITCH_TOKEN_KEY)
+        setTwitchAuthToken('')
+        setTwitchAuthMessage('Twitch連携の有効期限が切れました。再接続してください')
+        return
+      }
+      if (!response.ok) throw new Error(`Twitch確認エラー（${response.status}）`)
+      const data: { client_id?: string; user_id?: string; login?: string; scopes?: string[] } = await response.json()
+      if (!data.user_id || !data.scopes?.includes(TWITCH_SCOPE) || data.client_id !== twitchClientId.trim()) {
+        setTwitchBroadcasterId('')
+        setTwitchConnectedLogin('')
+        setTwitchAuthMessage('連携中のアプリIDまたは権限が一致しません。Twitchに再接続してください')
+        return
+      }
+      setTwitchBroadcasterId(data.user_id)
+      setTwitchConnectedLogin(data.login ?? '')
+      setTwitchAuthMessage('')
+    } catch (error) {
+      // 通信不良ではトークンを破棄しない。次回の確認または保存時に再試行できる。
+      setTwitchBroadcasterId('')
+      setTwitchConnectedLogin('')
+      setTwitchAuthMessage(`連携状況を確認できません：${error instanceof Error ? error.message : String(error)}`)
+    }
+  }, [twitchAuthToken, twitchClientId])
+
+  // Twitchは接続中のトークンを起動時と1時間ごとに検証する必要がある。
+  useEffect(() => {
+    void validateTwitchTitleToken()
+    if (!twitchAuthToken) return
+    const interval = setInterval(() => void validateTwitchTitleToken(), 60 * 60 * 1000)
+    return () => clearInterval(interval)
+  }, [twitchAuthToken, validateTwitchTitleToken])
+
+  const saveTwitchTitle = useCallback(async () => {
+    const title = twitchTitle.trim()
+    const length = Array.from(title).length
+    if (!title) { setTwitchTitleMessage('タイトルを入力してください'); return }
+    if (length > 140) { setTwitchTitleMessage('タイトルは140文字以内にしてください'); return }
+    if (!twitchAuthToken || !twitchBroadcasterId) {
+      setTwitchTitleMessage('先にTwitchと連携してください')
+      return
+    }
+    setTwitchTitleBusy(true)
+    setTwitchTitleMessage('Twitchに反映中…')
+    try {
+      const response = await fetch(
+        `https://api.twitch.tv/helix/channels?broadcaster_id=${encodeURIComponent(twitchBroadcasterId)}`,
+        {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${twitchAuthToken}`,
+            'Client-Id': twitchClientId.trim(),
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ title }),
+        }
+      )
+      if (!response.ok) {
+        let detail = ''
+        try {
+          const data = await response.json()
+          detail = data.message ?? ''
+        } catch { /* エラー本文の形式が異なる場合はHTTP番号のみ表示 */ }
+        if (response.status === 401) {
+          localStorage.removeItem(TWITCH_TOKEN_KEY)
+          setTwitchAuthToken('')
+          setTwitchBroadcasterId('')
+        }
+        throw new Error(`${response.status}${detail ? `：${detail}` : ''}`)
+      }
+      // Twitchのタイトル変更は成功時204 No Content。
+      setTwitchTitleMessage('✅ Twitchの配信タイトルに反映しました')
+    } catch (error) {
+      setTwitchTitleMessage(`変更できませんでした：${error instanceof Error ? error.message : String(error)}`)
+    } finally {
+      setTwitchTitleBusy(false)
+    }
+  }, [twitchTitle, twitchAuthToken, twitchBroadcasterId, twitchClientId])
+
   // The stream keys remain on Oracle Cloud; only the selected destination is sent.
   const loadStreamTarget = useCallback(async () => {
     setStreamTargetBusy(true)
@@ -691,29 +836,54 @@ const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const displayAvatarName = isLive2DActive ? live2d.modelName : useCustom ? avatarName : presetAvatar.name
   const displayAvatarColor = isLive2DActive ? '#00E5FF' : useCustom ? '#FF3FA4' : presetAvatar.color
 
-  // ── YouTube OAuth callback ──
-useEffect(() => {
-  const hash = window.location.hash
+  // ── OAuth callback: TwitchとYouTubeのトークンを混同しない ──
+  useEffect(() => {
+    const hash = window.location.hash
+    const params = new URLSearchParams(hash.startsWith('#') ? hash.slice(1) : '')
+    const search = new URLSearchParams(window.location.search)
+    const oauthState = params.get('state') ?? search.get('state') ?? ''
 
-  if (!hash.includes('access_token=')) return
+    if (oauthState.startsWith('vtulog-twitch-')) {
+      // Twitch連携が戻ってきたら、そのままTwitch設定画面を開く。
+      setShowStreamSettings(true)
+      setStreamSettingsPage('twitch')
+      const pendingRaw = localStorage.getItem(TWITCH_OAUTH_PENDING_KEY)
+      localStorage.removeItem(TWITCH_OAUTH_PENDING_KEY)
+      window.history.replaceState({}, document.title, window.location.pathname)
+      let validState = false
+      try {
+        if (pendingRaw) {
+          const pending: { state: string; startedAt: number } = JSON.parse(pendingRaw)
+          validState = pending.state === oauthState && Date.now() - pending.startedAt < 10 * 60 * 1000
+        }
+      } catch { /* 不正なリクエスト状態は失敗扱い */ }
+      if (!validState) {
+        setTwitchAuthMessage('Twitch連携を確認できません。もう一度接続してください')
+        return
+      }
+      if (search.get('error')) {
+        setTwitchAuthMessage('Twitch連携がキャンセルされました')
+        return
+      }
+      const accessToken = params.get('access_token')
+      if (!accessToken) {
+        setTwitchAuthMessage('Twitchからアクセストークンが返されませんでした')
+        return
+      }
+      localStorage.setItem(TWITCH_TOKEN_KEY, accessToken)
+      setTwitchAuthToken(accessToken)
+      setTwitchAuthMessage('Twitch連携が完了しました。権限を確認します…')
+      return
+    }
 
-  const params = new URLSearchParams(hash.substring(1))
-  const accessToken = params.get('access_token')
+    // 従来のYouTube OAuth動作は維持する。
+    const accessToken = params.get('access_token')
+    if (!accessToken) return
+    localStorage.setItem('youtube-access-token', accessToken)
+    window.history.replaceState({}, document.title, window.location.pathname)
+    console.log('YouTube OAuth 接続成功')
+  }, [])
 
-  if (!accessToken) return
-
-  localStorage.setItem('youtube-access-token', accessToken)
-
-  // URLからアクセストークンを消す
-  window.history.replaceState(
-    {},
-    document.title,
-    window.location.pathname
-  )
-
-  console.log('YouTube OAuth 接続成功')
-}, [])
-  
   // ── Camera init ──
   useEffect(() => {
     let localStream: MediaStream | null = null
@@ -3150,9 +3320,110 @@ useEffect(() => {
             <div style={{ color: 'var(--color-muted)' }}>まだコメントはありません</div>
           )}
         </div>
-        <p style={{ marginTop: '10px', fontSize: '11px', color: 'var(--color-muted)', lineHeight: 1.6 }}>
-          ストリームキーはアプリに入力しないでください。安全な切り替えにはサーバー側の認証付きAPIが必要です。
-        </p>
+        {/* タイトル変更はコメント取得と違いTwitch側の編集権限が必須 */}
+        <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid rgba(145,70,255,0.35)' }}>
+          <p style={{ fontSize: '13px', color: '#fff', fontWeight: 700, marginBottom: '6px' }}>
+            ✏️ Twitch配信タイトルを設定
+          </p>
+          <p style={{ fontSize: '11px', color: '#d2c7ed', lineHeight: 1.6, marginBottom: '9px' }}>
+            コメント閲覧とは別に、タイトル変更にはTwitch公式の編集許可が必要です（期限切れ時は再接続）。
+          </p>
+
+          <label htmlFor="vtulog-twitch-client-id" style={{ display: 'block', color: '#d2c7ed', fontSize: '11px', marginBottom: '5px' }}>
+            TwitchアプリのClient ID（初回登録）
+          </label>
+          <input
+            id="vtulog-twitch-client-id"
+            type="text"
+            value={twitchClientId}
+            onChange={event => setTwitchClientId(event.target.value.trim())}
+            placeholder="Twitch開発者コンソールで取得したClient ID"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            style={{ width: '100%', padding: '10px', borderRadius: '9px', color: '#fff', fontSize: '12px',
+              border: '1px solid rgba(145,70,255,0.45)', background: 'rgba(0,0,0,0.3)' }}
+          />
+          <p style={{ fontSize: '10px', color: 'var(--color-muted)', lineHeight: 1.6, marginTop: '7px' }}>
+            開発者コンソールのOAuth Redirect URLに次のURLを登録：
+          </p>
+          <div style={{ fontSize: '10px', color: '#cbb3ff', overflowWrap: 'anywhere',
+            background: 'rgba(0,0,0,0.3)', padding: '7px', borderRadius: '8px', marginTop: '4px' }}>
+            {`${window.location.origin}${window.location.pathname}`}
+          </div>
+          <button
+            type="button"
+            onClick={() => void navigator.clipboard?.writeText(`${window.location.origin}${window.location.pathname}`)}
+            style={{ fontSize: '11px', marginTop: '5px', color: '#cbb3ff', textDecoration: 'underline' }}
+          >
+            リダイレクトURLをコピー
+          </button>
+
+          {twitchConnectedLogin ? (
+            <div style={{ color: '#b4ffcf', fontSize: '11px', marginTop: '10px' }}>
+              ✅ Twitch連携済み：{twitchConnectedLogin}
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={connectTwitchTitle}
+              style={{ width: '100%', padding: '11px', marginTop: '10px', borderRadius: '10px',
+                color: '#fff', fontSize: '12px', fontWeight: 700, background: '#9146FF' }}
+            >
+              🟣 Twitchに連携してタイトル変更を許可
+            </button>
+          )}
+          {twitchAuthToken && (
+            <button
+              type="button"
+              onClick={disconnectTwitchTitle}
+              style={{ fontSize: '11px', color: '#d2c7ed', marginTop: '8px', textDecoration: 'underline' }}
+            >
+              Twitch連携を解除する
+            </button>
+          )}
+          {twitchAuthMessage && (
+            <p role="status" style={{ fontSize: '11px', color: '#f9cae9', marginTop: '8px', overflowWrap: 'anywhere' }}>
+              {twitchAuthMessage}
+            </p>
+          )}
+
+          <label htmlFor="vtulog-twitch-title" style={{ display: 'block', color: '#fff', fontSize: '12px',
+            fontWeight: 600, marginTop: '16px', marginBottom: '6px' }}>
+            配信タイトル
+          </label>
+          <input
+            id="vtulog-twitch-title"
+            type="text"
+            value={twitchTitle}
+            onChange={event => { setTwitchTitle(event.target.value); setTwitchTitleMessage('') }}
+            placeholder="例：お散歩配信｜VTuLog LIVE"
+            maxLength={140}
+            style={{ width: '100%', padding: '11px', borderRadius: '10px', color: '#fff', fontSize: '13px',
+              border: '1px solid rgba(145,70,255,0.5)', background: 'rgba(0,0,0,0.3)' }}
+          />
+          <p style={{ color: 'var(--color-muted)', fontSize: '10px', marginTop: '5px', textAlign: 'right' }}>
+            {Array.from(twitchTitle).length} / 140文字
+          </p>
+          <button
+            type="button"
+            disabled={twitchTitleBusy || !twitchConnectedLogin}
+            onClick={() => void saveTwitchTitle()}
+            style={{ width: '100%', padding: '12px', marginTop: '8px', borderRadius: '10px',
+              background: '#9146FF', color: '#fff', fontSize: '13px', fontWeight: 700,
+              opacity: twitchTitleBusy || !twitchConnectedLogin ? 0.5 : 1 }}
+          >
+            {twitchTitleBusy ? '反映中…' : 'Twitchにタイトルを反映'}
+          </button>
+          {twitchTitleMessage && (
+            <p role="status" style={{ fontSize: '11px', color: '#f6ebff', marginTop: '8px', overflowWrap: 'anywhere' }}>
+              {twitchTitleMessage}
+            </p>
+          )}
+          <p style={{ fontSize: '10px', color: 'var(--color-muted)', lineHeight: 1.6, marginTop: '8px' }}>
+            GO LIVE前にタイトルを設定できます。配信キーやClient Secretは入力しません。
+          </p>
+        </div>
       </div>
     )}
 
