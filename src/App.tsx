@@ -479,7 +479,10 @@ const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   // ── UI ──
   const [showStreamSettings, setShowStreamSettings] = useState(false)
   const [streamSettingsPage, setStreamSettingsPage] = useState<'menu' | 'youtube' | 'twitch' | 'target'>('menu')
-  const [streamTarget, setStreamTarget] = useState<'youtube' | 'twitch' | null>(null)
+  const [streamTarget, setStreamTarget] = useState<'youtube' | 'twitch' | null>(() => {
+    const saved = localStorage.getItem('vtulog-stream-target')
+    return saved === 'youtube' || saved === 'twitch' ? saved : null
+  })
   const [streamTargetBusy, setStreamTargetBusy] = useState(false)
   const [streamTargetMessage, setStreamTargetMessage] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -490,6 +493,21 @@ const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   { id: string; author: string; message: string }[]
 >([])
   const [youtubeTitle, setYoutubeTitle] = useState('VTuLog LIVE')
+
+  // ── Twitchコメント（匿名・読み取り専用IRC） ──
+  const [twitchChannel, setTwitchChannel] = useState(() =>
+    localStorage.getItem('vtulog-twitch-channel') ?? ''
+  )
+  const [twitchComments, setTwitchComments] = useState<
+    { id: string; author: string; message: string }[]
+  >([])
+  const [twitchChatStatus, setTwitchChatStatus] = useState<
+    'idle' | 'connecting' | 'connected' | 'reconnecting' | 'error'
+  >('idle')
+
+  useEffect(() => {
+    localStorage.setItem('vtulog-twitch-channel', twitchChannel)
+  }, [twitchChannel])
   
   // The stream keys remain on Oracle Cloud; only the selected destination is sent.
   const loadStreamTarget = useCallback(async () => {
@@ -502,6 +520,7 @@ const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
         throw new Error(data.error ?? `HTTP ${response.status}`)
       }
       setStreamTarget(data.target)
+      localStorage.setItem('vtulog-stream-target', data.target)
     } catch (error) {
       setStreamTarget(null)
       setStreamTargetMessage(`配信先を取得できません：${error instanceof Error ? error.message : String(error)}`)
@@ -527,6 +546,7 @@ const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
         throw new Error(data.error ?? `HTTP ${response.status}`)
       }
       setStreamTarget(target)
+      localStorage.setItem('vtulog-stream-target', target)
       setStreamTargetMessage(`${target === 'youtube' ? 'YouTube' : 'Twitch'}に変更しました`)
     } catch (error) {
       setStreamTargetMessage(`切り替えに失敗しました：${error instanceof Error ? error.message : String(error)}`)
@@ -538,6 +558,124 @@ const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   useEffect(() => {
     if (showStreamSettings && streamSettingsPage === 'target') void loadStreamTarget()
   }, [showStreamSettings, streamSettingsPage, loadStreamTarget])
+
+  // 配信先の現在値を初回表示時にも取得する。配信設定を開かずにGO LIVEしてもコメント接続できる。
+  useEffect(() => {
+    void loadStreamTarget()
+  }, [loadStreamTarget])
+
+  // Twitch設定画面では配信前にコメントを試せる。配信中はTwitch選択時のみ受信。
+  useEffect(() => {
+    const inTwitchSettings = appState === 'idle' && showStreamSettings && streamSettingsPage === 'twitch'
+    const onTwitchLive = appState === 'live' && streamTarget === 'twitch' && rtcRole !== 'receiver'
+    const enabled = inTwitchSettings || onTwitchLive
+    const channel = twitchChannel.trim().replace(/^@/, '').toLowerCase()
+
+    if (!enabled) {
+      setTwitchChatStatus('idle')
+      return
+    }
+    if (!/^[a-z0-9_]{3,25}$/.test(channel)) {
+      setTwitchChatStatus('error')
+      return
+    }
+
+    let disposed = false
+    let ws: WebSocket | null = null
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+    let serial = 0
+    setTwitchComments([])
+    setTwitchChatStatus('connecting')
+
+    const connect = () => {
+      if (disposed) return
+      setTwitchChatStatus(status => status === 'connecting' ? status : 'reconnecting')
+      let socket: WebSocket
+      try {
+        socket = new WebSocket('wss://irc-ws.chat.twitch.tv:443')
+      } catch (error) {
+        console.warn('Twitchコメント接続に失敗:', error)
+        reconnectTimer = setTimeout(connect, 5000)
+        return
+      }
+      ws = socket
+
+      socket.onopen = () => {
+        if (disposed) return
+        // 匿名接続: チャットを見るだけ。TwitchのログインやOAuthは要求しない。
+        socket.send('PASS SCHMOOPIIE\r\n')
+        socket.send(`NICK justinfan${Math.floor(Math.random() * 999999)}\r\n`)
+        socket.send('CAP REQ :twitch.tv/tags\r\n')
+        socket.send(`JOIN #${channel}\r\n`)
+      }
+
+      socket.onmessage = event => {
+        if (disposed || typeof event.data !== 'string') return
+        const lines = event.data.split('\r\n')
+        for (const line of lines) {
+          if (!line) continue
+          if (line.startsWith('PING ')) {
+            socket.send(`PONG ${line.slice(5)}\r\n`)
+            continue
+          }
+          if (/^:tmi\.twitch\.tv 001 /.test(line) || line.includes(` JOIN #${channel}`)) {
+            setTwitchChatStatus('connected')
+          }
+          if (line.includes(' NOTICE ') && /authentication failed|improperly formatted/i.test(line)) {
+            setTwitchChatStatus('error')
+            continue
+          }
+
+          // @tags :login!login@login.tmi.twitch.tv PRIVMSG #channel :message
+          const match = line.match(/^(?:@([^ ]+) )?:([^! ]+)![^ ]+ PRIVMSG #[^ ]+ :(.+)$/)
+          if (!match) continue
+          const [, rawTags, login, message] = match
+          const displayTag = rawTags?.split(';').find(tag => tag.startsWith('display-name='))
+          const displayName = displayTag?.slice('display-name='.length)
+            .replace(/\\s/g, ' ')
+            .replace(/\\:/g, ';')
+            .replace(/\\r/g, '\r')
+            .replace(/\\n/g, '\n')
+            .replace(/\\\\/g, '\\')
+          const idTag = rawTags?.split(';').find(tag => tag.startsWith('id='))
+          serial++
+          setTwitchChatStatus('connected')
+          setTwitchComments(previous => [...previous, {
+            id: idTag?.slice(3) || `${Date.now()}-${serial}`,
+            author: displayName || login,
+            message,
+          }].slice(-30))
+        }
+      }
+
+      socket.onerror = () => { if (!disposed) console.warn('Twitch IRC WebSocketで通信エラー') }
+      socket.onclose = () => {
+        if (disposed) return
+        setTwitchChatStatus('reconnecting')
+        reconnectTimer = setTimeout(connect, 5000)
+      }
+    }
+
+    // チャンネル名入力時の連続接続を防ぐ。
+    reconnectTimer = setTimeout(connect, 400)
+    return () => {
+      disposed = true
+      if (reconnectTimer) clearTimeout(reconnectTimer)
+      if (ws) {
+        ws.onclose = null
+        ws.onmessage = null
+        ws.close()
+      }
+    }
+  }, [appState, rtcRole, streamTarget, twitchChannel, showStreamSettings, streamSettingsPage])
+
+  const twitchChatStatusLabel = {
+    idle: '待機中',
+    connecting: '接続中…',
+    connected: '接続済み',
+    reconnecting: '再接続中…',
+    error: 'チャンネル名を確認してください',
+  }[twitchChatStatus]
 
   const isCapturing = true
   const isLive = appState === 'live'
@@ -1177,7 +1315,7 @@ const bindYouTubeBroadcast = useCallback(async () => {
   
 // ── YouTube コメント自動更新 ──
 useEffect(() => {
-  if (appState !== 'live') return
+  if (appState !== 'live' || streamTarget !== 'youtube') return
 
   let stopped = false
 
@@ -1207,7 +1345,7 @@ useEffect(() => {
     stopped = true
     clearInterval(interval)
   }
-}, [appState, fetchYouTubeLive])
+}, [appState, streamTarget, fetchYouTubeLive])
 
   // ── YouTube 配信終了確認 ──
 useEffect(() => {
@@ -2481,6 +2619,32 @@ useEffect(() => {
             </div>
           )}
 
+          {/* Twitchコメント: HTMLオーバーレイなので配信映像には合成されない。 */}
+          {isLive && streamTarget === 'twitch' && rtcRole !== 'receiver' && (
+            <div style={{
+              position: 'absolute', top: '34%', left: '8px', right: '8px',
+              zIndex: 22, pointerEvents: 'none',
+              maxHeight: '42%', overflow: 'hidden',
+              borderRadius: '10px', padding: '7px 8px',
+              background: 'rgba(12,8,25,0.78)', color: '#fff',
+              border: '1px solid rgba(145,70,255,0.42)',
+              fontSize: '11px', lineHeight: 1.45,
+            }}>
+              <div style={{ color: '#cbb3ff', fontSize: '10px', fontWeight: 700, marginBottom: '4px' }}>
+                💬 Twitch・{twitchChatStatusLabel}
+              </div>
+              {twitchComments.length > 0 ? twitchComments.slice(-3).map(comment => (
+                <div key={comment.id} style={{ marginTop: '3px', overflowWrap: 'anywhere' }}>
+                  <strong style={{ color: '#cbb3ff' }}>{comment.author}</strong>：{comment.message}
+                </div>
+              )) : (
+                <div style={{ color: '#c6c0d2' }}>
+                  {twitchChannel.trim() ? 'コメント待機中' : '配信設定 → Twitchでチャンネル名を入力'}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Recording border */}
          {isLive && (
           <div
@@ -2945,7 +3109,46 @@ useEffect(() => {
           background: 'rgba(0,0,0,0.18)', color: '#fff', fontSize: '12px', lineHeight: 1.8 }}>
           <div>💜 Twitch配信：対応済み</div>
           <div>🔒 配信先：Oracle Cloud側で管理</div>
+        </div>
 
+        <label htmlFor="vtulog-twitch-channel" style={{
+          display: 'block', marginTop: '14px', marginBottom: '6px',
+          color: '#fff', fontSize: '12px', fontWeight: 600,
+        }}>
+          💬 コメントを読むTwitchチャンネル
+        </label>
+        <input
+          id="vtulog-twitch-channel"
+          type="text"
+          value={twitchChannel}
+          onChange={event => setTwitchChannel(event.target.value)}
+          placeholder="例: twitchdev（@やURLは不要）"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          style={{
+            width: '100%', padding: '10px 12px', borderRadius: '10px',
+            border: '1px solid rgba(145,70,255,0.5)', background: 'rgba(0,0,0,0.3)',
+            color: '#fff', fontSize: '14px',
+          }}
+        />
+        <p style={{ marginTop: '6px', color: '#d2c7ed', fontSize: '11px' }}>
+          自動保存されます。配信前でもこの画面で受信を確認できます。
+        </p>
+        <div style={{
+          marginTop: '10px', padding: '10px', borderRadius: '10px',
+          background: 'rgba(0,0,0,0.3)', color: '#fff', fontSize: '11px',
+        }}>
+          <div style={{ color: '#cbb3ff', fontWeight: 600, marginBottom: '5px' }}>
+            コメント：{twitchChatStatusLabel}
+          </div>
+          {twitchComments.length ? twitchComments.slice(-5).map(comment => (
+            <div key={comment.id} style={{ marginBottom: '5px', overflowWrap: 'anywhere' }}>
+              <strong style={{ color: '#cbb3ff' }}>{comment.author}</strong>：{comment.message}
+            </div>
+          )) : (
+            <div style={{ color: 'var(--color-muted)' }}>まだコメントはありません</div>
+          )}
         </div>
         <p style={{ marginTop: '10px', fontSize: '11px', color: 'var(--color-muted)', lineHeight: 1.6 }}>
           ストリームキーはアプリに入力しないでください。安全な切り替えにはサーバー側の認証付きAPIが必要です。
