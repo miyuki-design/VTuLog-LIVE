@@ -10,6 +10,15 @@ type YouTubeLiveStatus =
   | 'ending'
   | 'ended'
 
+// WHIPの接続状態。配信プラットフォーム側での公開確認とは区別する。
+type StreamTransportStatus =
+  | 'idle'
+  | 'connecting'
+  | 'sending'
+  | 'failed'
+  | 'ending'
+  | 'ended'
+
 const PRESET_AVATARS = [
   { id: 'hana', name: 'ハナ', color: '#FF3FA4', hair: '#FF8BC8', eye: '#00E5FF' },
   { id: 'luna', name: 'ルナ', color: '#7B2FFF', hair: '#C9A0FF', eye: '#FFD700' },
@@ -409,6 +418,8 @@ export default function App() {
   const [liveTime, setLiveTime] = useState(0)
   const [youtubeLiveStatus, setYoutubeLiveStatus] =
   useState<YouTubeLiveStatus>('idle')
+  const [streamTransportStatus, setStreamTransportStatus] =
+    useState<StreamTransportStatus>('idle')
 
   const liveStreamRef = useRef<MediaStream | null>(null)
   const audioStreamRef = useRef<MediaStream | null>(null)
@@ -692,6 +703,8 @@ const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
       }
       setStreamTarget(target)
       localStorage.setItem('vtulog-stream-target', target)
+      setStreamTransportStatus('idle')
+      setYoutubeLiveStatus('idle')
       setStreamTargetMessage(`${target === 'youtube' ? 'YouTube' : 'Twitch'}に変更しました`)
     } catch (error) {
       setStreamTargetMessage(`切り替えに失敗しました：${error instanceof Error ? error.message : String(error)}`)
@@ -824,13 +837,25 @@ const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const isCapturing = true
   const isLive = appState === 'live'
-  const youtubeStatusLabel: Record<YouTubeLiveStatus, string> = {
-  idle: '⚪ 配信待機中',
-  connecting: '🟡 YouTube接続確認中',
-  live: '🔴 YouTube LIVE配信中',
-  ending: '🟠 配信終了確認中',
-  ended: '✅ 配信終了',
-}
+  // 実際の配信先に応じた状態表示。WHIP接続と配信先での公開状態は別物。
+  const streamStatusLabel = (() => {
+    if (!streamTarget) return '⚪ 配信先を確認中'
+    const platform = streamTarget === 'youtube' ? 'YouTube' : 'Twitch'
+    if (streamTransportStatus === 'idle') return `⚪ ${platform}配信待機中`
+    if (streamTransportStatus === 'connecting') return `🟡 ${platform}へ接続中`
+    if (streamTransportStatus === 'failed') return `⚠️ ${platform}への送信に失敗`
+    if (streamTransportStatus === 'ending') return `🟠 ${platform}への送信終了中`
+    if (streamTransportStatus === 'ended') {
+      if (streamTarget === 'youtube' && youtubeLiveStatus === 'ended') return '✅ YouTube配信終了確認済み'
+      if (streamTarget === 'youtube' && youtubeLiveStatus === 'ending') return '🟠 YouTube送信終了（配信終了確認中）'
+      return `✅ ${platform}への送信終了`
+    }
+    // 送信成功のみでTwitch上での配信公開まで確認できたとは断定しない。
+    if (streamTarget === 'twitch') return '🟣 Twitchへ映像送信中（公開未確認）'
+    return youtubeLiveStatus === 'live'
+      ? '🔴 YouTube LIVE配信中'
+      : '🔴 YouTubeへ映像送信中（公開確認待ち）'
+  })()
   const presetAvatar = PRESET_AVATARS[selectedPreset]
   const isLive2DActive = live2d.status === 'loaded'
   const displayAvatarName = isLive2DActive ? live2d.modelName : useCustom ? avatarName : presetAvatar.name
@@ -1519,7 +1544,8 @@ useEffect(() => {
 
   // ── YouTube 配信終了確認 ──
 useEffect(() => {
-  if (youtubeLiveStatus !== 'ending') return
+  // TwitchではYouTube APIの終了確認を絶対に呼ばない。
+  if (streamTarget !== 'youtube' || youtubeLiveStatus !== 'ending') return
 
   const accessToken = localStorage.getItem('youtube-access-token')
   const broadcastId = localStorage.getItem('youtube-broadcast-id')
@@ -1570,7 +1596,7 @@ useEffect(() => {
     stopped = true
     clearInterval(interval)
   }
-}, [youtubeLiveStatus])
+}, [youtubeLiveStatus, streamTarget])
   
   // ── Microphone ON / OFF ──
 const toggleMic = useCallback(() => {
@@ -1658,20 +1684,33 @@ const startWhipBroadcast = useCallback(async (overrideUrl?: string) => {
   const url = (overrideUrl ?? whipUrl).trim()
 
   if (!stream) {
+    setStreamTransportStatus('failed')
     alert('LIVE映像がまだ準備できていません')
     return
   }
 
   if (!url) {
+    setStreamTransportStatus('failed')
     alert('先にWHIP URLを保存してください')
     return
   }
 
+  setStreamTransportStatus('connecting')
+  let activePeer: RTCPeerConnection | null = null
   try {
     whipPeerRef.current?.close()
 
     const peer = new RTCPeerConnection()
+    activePeer = peer
     whipPeerRef.current = peer
+
+    // 接続が成立してから「送信中」と表示する。Twitch/YouTube公開確認とは別。
+    peer.onconnectionstatechange = () => {
+      if (whipPeerRef.current !== peer) return
+      if (peer.connectionState === 'connected') setStreamTransportStatus('sending')
+      else if (peer.connectionState === 'failed') setStreamTransportStatus('failed')
+      else if (peer.connectionState === 'disconnected') setStreamTransportStatus('connecting')
+    }
 
     stream.getTracks().forEach(track => {
       peer.addTransceiver(track, {
@@ -1710,11 +1749,19 @@ if (sessionUrl) {
     })
 
     console.log('Cloudflare Stream WHIP接続成功')
+    // 接続状態の通知が先に届いていた場合も反映する。
+    if (whipPeerRef.current === peer && peer.connectionState === 'connected') {
+      setStreamTransportStatus('sending')
+    }
   } catch (error) {
     console.error('WHIP broadcast failed:', error)
 
-    whipPeerRef.current?.close()
-    whipPeerRef.current = null
+    // LIVE終了後に遅延した通信エラーで「失敗」に戻さない。
+    if (activePeer && whipPeerRef.current === activePeer) {
+      setStreamTransportStatus('failed')
+      whipPeerRef.current.close()
+      whipPeerRef.current = null
+    }
 
     alert(
       `Cloudflare Streamへの接続に失敗しました\n\n${
@@ -2311,7 +2358,9 @@ await sender.setRemoteDescription(receiver.localDescription)
     )) return
 
    setMicError(null)
-   setYoutubeLiveStatus('connecting')
+   setStreamTransportStatus('connecting')
+   // YouTube固有の状態はYouTube配信時だけ更新する。
+   setYoutubeLiveStatus(streamTarget === 'youtube' ? 'connecting' : 'idle')
 
 // 前回のLIVE終了通知をリセット
 await fetch(
@@ -2375,6 +2424,8 @@ const latestWhipUrl = await fetchLatestWhipUrl()
 
 if (latestWhipUrl) {
   void startWhipBroadcast(latestWhipUrl)
+} else {
+  setStreamTransportStatus('failed')
 }
     
     setLiveTime(0)
@@ -2383,11 +2434,12 @@ if (latestWhipUrl) {
     timerRef.current = setInterval(() => {
       setLiveTime(t => t + 1)
     }, 1000)
-  }, [rtcRole, createSenderOffer, whipUrl, startWhipBroadcast])
+  }, [rtcRole, createSenderOffer, whipUrl, startWhipBroadcast, streamTarget])
 
     // ── Stop LIVE ──
  const stopLive = useCallback(async () => {
- setYoutubeLiveStatus('ending')
+ setStreamTransportStatus('ending')
+ if (streamTarget === 'youtube') setYoutubeLiveStatus('ending')
 
    // 相手端末へLIVE終了を通知
   if (rtcRole) {
@@ -2439,8 +2491,10 @@ whipPeerRef.current = null
   liveStreamRef.current?.getTracks().forEach(track => track.stop())
   liveStreamRef.current = null
 
-     // YouTube LIVEも終了
-  const accessToken = localStorage.getItem('youtube-access-token')
+     // Twitch配信時にYouTubeの配信枠を終了させない。
+  const accessToken = streamTarget === 'youtube'
+    ? localStorage.getItem('youtube-access-token')
+    : null
 
   if (accessToken) {
     try {
@@ -2495,7 +2549,8 @@ whipPeerRef.current = null
 
   setAppState('idle')
   setLiveTime(0)
-}, [rtcRole, stopWebRTCTest])
+  setStreamTransportStatus('ended')
+}, [rtcRole, stopWebRTCTest, streamTarget])
 
 // ── Watch remote LIVE end ──
 useEffect(() => {
@@ -3060,7 +3115,7 @@ useEffect(() => {
         {/* controls */}
 <div className="flex-1 min-h-0 overflow-hidden flex flex-col px-5 pt-3 pb-6">
 
-        {/* YouTube 配信状態 */}
+        {/* 配信先に合わせた送信状態・配信状態 */}
 <div
   style={{
     textAlign: 'center',
@@ -3074,7 +3129,7 @@ useEffect(() => {
     color: '#FFFFFF',
   }}
 >
-  {youtubeStatusLabel[youtubeLiveStatus]}
+  {streamStatusLabel}
 </div>
 
           {appState === 'idle' && (
